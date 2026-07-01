@@ -38,22 +38,25 @@ pub async fn check_for_updates(http_client: reqwest::Client, send: FrontendHandl
     let response = match response {
         Ok(response) => response,
         Err(err) => {
-            log::error!("Error while requesting update manifest: {}", err);
-            send.send_error("Unable to fetch Quartz update manifest, see logs for more details");
+            log::warn!("Unable to fetch update manifest: {}", err);
             return;
         },
     };
 
+    if response.status() == StatusCode::NOT_FOUND {
+        log::debug!("No update manifest published for this platform");
+        return;
+    }
+
     if response.status() != StatusCode::OK {
-        send.send_error(format!("Unable to fetch Quartz update manifest, non-200 status code: {}", response.status()));
+        log::warn!("Update manifest request returned {}", response.status());
         return;
     }
 
     let manifest_bytes = match response.bytes().await {
         Ok(manifest_bytes) => manifest_bytes,
         Err(err) => {
-            log::error!("Error while downloading update manifest: {}", err);
-            send.send_error("Unable to download Quartz update manifest, see logs for more details");
+            log::warn!("Unable to download update manifest: {}", err);
             return;
         },
     };
@@ -61,8 +64,7 @@ pub async fn check_for_updates(http_client: reqwest::Client, send: FrontendHandl
     let manifest = match serde_json::from_slice::<UpdateManifest>(&manifest_bytes) {
         Ok(manifest) => manifest,
         Err(err) => {
-            log::error!("Error while parsing update manifest: {}", err);
-            send.send_error("Unable to parse update manifest, see logs for more details");
+            log::warn!("Unable to parse update manifest: {}", err);
             return;
         },
     };

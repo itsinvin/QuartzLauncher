@@ -65,6 +65,31 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare release notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          {
+            awk "/^## \\[${VERSION}\\]/{flag=1; next} /^## \\[/{if(flag) exit} flag" CHANGELOG.md
+            echo ""
+            echo "## Downloads"
+            echo ""
+            echo "### Windows"
+            echo "- **Installer:** \`QuartzLauncher-Windows-x86_64-Setup.exe\`"
+            echo "- **Portable:** \`QuartzLauncher-Windows-x86_64-Portable.exe\`"
+            echo ""
+            echo "### Linux"
+            echo "- **AppImage:** \`QuartzLauncher-Linux-x86_64.AppImage\`"
+            echo "- **Portable:** \`QuartzLauncher-Linux-x86_64-Portable\`"
+            echo ""
+            echo "### macOS"
+            echo "- **Disk image:** \`QuartzLauncher.dmg\`"
+            echo "- **Portable:** \`QuartzLauncher-macOS-Universal-Portable\`"
+            echo "- **App bundle:** \`QuartzLauncher.app.tar.gz\`"
+          } > release_body.md
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -74,21 +99,7 @@ jobs:
         with:
           fail_on_unmatched_files: true
           generate_release_notes: true
-          body: |
-            ## Downloads
-
-            ### Windows
-            - **Installer:** `QuartzLauncher-Windows-x86_64-Setup.exe`
-            - **Portable:** `QuartzLauncher-Windows-x86_64-Portable.exe`
-
-            ### Linux
-            - **AppImage:** `QuartzLauncher-Linux-x86_64.AppImage`
-            - **Portable:** `QuartzLauncher-Linux-x86_64-Portable`
-
-            ### macOS
-            - **Disk image:** `QuartzLauncher.dmg`
-            - **Portable:** `QuartzLauncher-macOS-Universal-Portable`
-            - **App bundle:** `QuartzLauncher.app.tar.gz`
+          body_path: release_body.md
           files: ./artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

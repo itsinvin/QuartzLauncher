@@ -1,0 +1,29 @@
+---
+description: Release workflow — version bump, changelog, tag, and GitHub release
+alwaysApply: true
+---
+
+# Release Workflow
+
+After every build-worthy change set, publish a GitHub release. Do not leave fixes only on `main` without a tagged release.
+
+## Before tagging
+
+1. Bump `version` in root `Cargo.toml` (`[workspace.package]`).
+2. Add a dated section to `CHANGELOG.md` under `## [x.y.z] - YYYY-MM-DD` with **Added**, **Fixed**, **Changed**, **Removed** as appropriate.
+3. Commit all changes (including `Cargo.lock` if it changed).
+
+## Publish
+
+1. Create an annotated tag matching the version: `v{version}` (e.g. `v5.2.4`).
+2. Push the commit and tag to `origin`.
+3. CD (`.github/workflows/cd.yml`) runs on tag push and uploads installers to GitHub Releases.
+
+## After CI completes
+
+1. Verify the [Releases](https://github.com/itsinvin/QuartzLauncher/releases) page has artifacts (Windows Setup.exe, portable builds, Linux AppImage, macOS dmg).
+2. Confirm release notes include the `CHANGELOG.md` entry and download links.
+
+## Windows installer
+
+The primary Windows download is `QuartzLauncher-Windows-x86_64-Setup.exe` on each release.
