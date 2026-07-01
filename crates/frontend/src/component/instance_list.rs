@@ -1,7 +1,7 @@
 use bridge::{handle::BackendHandle, instance::InstanceStatus, message::MessageToBackend};
 use gpui::{prelude::*, *};
 use gpui_component::{
-    button::{Button, ButtonVariants}, h_flex, table::{Column, ColumnSort, TableDelegate, TableState}, v_flex, ActiveTheme, Icon, Sizable
+    button::{Button, ButtonVariants}, h_flex, table::{Column, ColumnSort, TableDelegate, TableState}, v_flex, ActiveTheme, Icon, InteractiveElementExt, Sizable
 };
 
 use crate::{component::animation::format_last_played, entity::{

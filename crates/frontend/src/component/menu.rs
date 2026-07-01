@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use gpui::{prelude::*, transparent_black, App, ClickEvent, InteractiveElement, IntoElement, ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div, h_flex};
-use gpui_component::{ActiveTheme, StyledExt, v_flex};
+use gpui::{prelude::*, transparent_black, App, ClickEvent, InteractiveElement, IntoElement, ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div};
+use gpui_component::{ActiveTheme, StyledExt, h_flex, v_flex};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum MenuIndicator {
@@ -35,7 +35,6 @@ impl RenderOnce for MenuGroup {
             .pt_1()
             .text_xs()
             .font_medium()
-            .tracking_wide()
             .text_color(cx.theme().sidebar_foreground.opacity(0.55))
             .child(self.title);
 

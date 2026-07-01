@@ -378,7 +378,7 @@ impl LauncherUI {
     fn animate_page_in(cx: &mut Context<Self>) {
         let entity = cx.entity();
         let start = 0.78f32;
-        cx.spawn(async move |cx| {
+        cx.spawn(async move |_, cx| {
             let steps = 14u32;
             for i in 0..=steps {
                 let t = animation::ease_out_cubic(i as f32 / steps as f32);

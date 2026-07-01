@@ -1,0 +1,21 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo check
+        run: cargo check --release -p quartz_launcher

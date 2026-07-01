@@ -4,6 +4,12 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.9] - 2026-07-01
+
+### Fixed
+- CI compile errors: menu imports, spawn closures, borrow order, double-click trait
+- Added `check.yml` workflow to catch compile errors on `main` before tagging releases
+
 ## [5.2.8] - 2026-07-01
 
 ### Fixed

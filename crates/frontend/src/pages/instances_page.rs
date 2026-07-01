@@ -57,7 +57,7 @@ impl InstancesPage {
             let generation = this.search_generation;
             let query = state.read(cx).text().to_string();
             let page_entity = cx.entity();
-            cx.spawn(async move |cx| {
+            cx.spawn(async move |_, cx| {
                 cx.background_executor().timer(Duration::from_millis(250)).await;
                 let _ = page_entity.update(cx, |page, cx| {
                     if page.search_generation != generation {
@@ -120,8 +120,8 @@ impl Render for InstancesPage {
         let no_results = delegate.has_no_visible_instances() && delegate.is_filter_active();
 
         if is_empty {
-            let theme = cx.theme();
             let logo_scale = animation::animated_logo_scale(window, cx);
+            let theme = cx.theme();
             let logo_size = px(64.0 * logo_scale);
             return v_flex()
                 .size_full()
