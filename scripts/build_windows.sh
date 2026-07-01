@@ -9,6 +9,8 @@ fi
 version=${1#v}
 export PANDORA_RELEASE_VERSION=$version
 
+python3 scripts/generate_icons.py
+
 cargo build --release --frozen --target x86_64-pc-windows-msvc
 strip target/x86_64-pc-windows-msvc/release/quartz_launcher.exe
 

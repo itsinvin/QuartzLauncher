@@ -583,6 +583,11 @@ en = "Quartz"
 de = "Quartz"
 hu = "Quartz"
 sv = "Quartz"
+[common.launcher_title]
+en = "Quartz Launcher"
+de = "Quartz Launcher"
+hu = "Quartz Launcher"
+sv = "Quartz Launcher"
 [common.unknown]
 en = "Unknown"
 de = "Unbekannt"
@@ -823,6 +828,36 @@ en = "Recent Instances"
 de = "Letzte Instanzen"
 hu = "Legutóbbi példányok"
 sv = "Senaste instanserna"
+[instance.search_placeholder]
+en = "Search instances..."
+de = "Instanzen suchen..."
+hu = "Példányok keresése..."
+sv = "Sök instanser..."
+[instance.search_no_results]
+en = "No instances match your search"
+de = "Keine Instanzen entsprechen deiner Suche"
+hu = "Nincs a keresésnek megfelelő példány"
+sv = "Inga instanser matchar din sökning"
+[instance.never_played]
+en = "Never played"
+de = "Nie gespielt"
+hu = "Még nem játszott"
+sv = "Aldrig spelat"
+[instance.last_played_just_now]
+en = "Played just now"
+de = "Gerade gespielt"
+hu = "Most játszott"
+sv = "Spelade precis"
+[instance.welcome.title]
+en = "Welcome to Quartz"
+de = "Willkommen bei Quartz"
+hu = "Üdv a Quartzban"
+sv = "Välkommen till Quartz"
+[instance.welcome.subtitle]
+en = "Create your first instance to start playing modded Minecraft. Browse Modrinth and CurseForge, sync saves between worlds, and estimate performance — all in one launcher."
+de = "Erstelle deine erste Instanz, um modded Minecraft zu spielen. Durchsuche Modrinth und CurseForge, synchronisiere Welten und schätze die Performance — alles in einem Launcher."
+hu = "Hozd létre az első példányodat a modolt Minecraft játékhoz. Böngéssz a Modrinth és CurseForge oldalakon, szinkronizálj világokat és becsüld meg a teljesítményt — egy launcherben."
+sv = "Skapa din första instans för att spela moddad Minecraft. Bläddra på Modrinth och CurseForge, synka världar och uppskatta prestanda — allt i en launcher."
 [instance.none_selected]
 en = "Select an instance"
 de = "Wähle eine Instanz aus"
@@ -2117,6 +2152,11 @@ en = "Please select one of the above to import from ${launcher: &str}"
 de = "Bitte wähle eine der Optionen aus, um es von ${launcher: &str} zu importieren"
 hu = "Kérlek válassz egyet a fentiek közül, hogy importálj innen: ${launcher: &str}"
 sv = "Var vänlig och välj något av de ovanstående för att importera från ${launcher: &str}"
+[import.title]
+en = "Import"
+de = "Importieren"
+hu = "Importálás"
+sv = "Importera"
 [import.enabled]
 en = "Import the above selected from ${launcher: &str}"
 de = "Importiere das oben Ausgewählte von ${launcher: &str}"
@@ -2128,6 +2168,16 @@ en = "Tools"
 de = "Werkzeuge"
 hu = "Eszközök"
 sv = "Verktyg"
+[sidebar.minecraft]
+en = "Minecraft"
+de = "Minecraft"
+hu = "Minecraft"
+sv = "Minecraft"
+[sidebar.files]
+en = "Files"
+de = "Dateien"
+hu = "Fájlok"
+sv = "Filer"
 
 [tools.performance.title]
 en = "Performance"

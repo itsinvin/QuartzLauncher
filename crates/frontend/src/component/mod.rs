@@ -1,3 +1,5 @@
+pub mod quartz_logo;
+pub mod animation;
 pub mod content_list;
 pub mod error_alert;
 pub mod horizontal_sections;
@@ -40,25 +42,17 @@ pub fn create_styled_text(text: &schema::text_component::FlatTextComponent, gray
                     }),
                     font_style: run.style.italic.map(|italic| {
                         if italic {
-                            gpui::FontStyle::Normal
-                        } else {
                             gpui::FontStyle::Italic
+                        } else {
+                            gpui::FontStyle::Normal
                         }
                     }),
                     background_color: None,
-                    underline: run.style.underlined.map(|underline| {
-                        if underline {
-                            gpui::UnderlineStyle::default()
-                        } else {
-                            gpui::UnderlineStyle { thickness: gpui::px(1.0), ..Default::default() }
-                        }
+                    underline: run.style.underlined.and_then(|underline| {
+                        underline.then_some(gpui::UnderlineStyle::default())
                     }),
-                    strikethrough: run.style.strikethrough.map(|strikethrough| {
-                        if strikethrough {
-                            gpui::StrikethroughStyle::default()
-                        } else {
-                            gpui::StrikethroughStyle { thickness: gpui::px(1.0), ..Default::default() }
-                        }
+                    strikethrough: run.style.strikethrough.and_then(|strikethrough| {
+                        strikethrough.then_some(gpui::StrikethroughStyle::default())
                     }),
                     fade_out: None,
                 }

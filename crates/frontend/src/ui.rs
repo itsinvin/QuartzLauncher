@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::{collections::VecDeque, sync::Arc, time::Instant};
 
 use bridge::instance::InstanceID;
 use gpui::{prelude::*, *};
@@ -10,9 +10,9 @@ use schema::pandora_update::UpdatePrompt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    component::{menu::{MenuGroup, MenuGroupItem}, page_path::PagePath, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
+    component::{animation, menu::{MenuGroup, MenuGroupItem}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
         DataEntities, account::AccountExt, instance::{InstanceAddedEvent, InstanceEntries, InstanceModifiedEvent, InstanceMovedToTopEvent, InstanceRemovedEvent}
-    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache,
+    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
 };
 
 pub struct LauncherUI {
@@ -25,6 +25,8 @@ pub struct LauncherUI {
     page_history_forwards: Vec<(PageType, Arc<[PageType]>)>,
     previous_pages: FxHashMap<PageType, LauncherPage>,
     pending_page: Option<(PageType, Arc<[PageType]>)>,
+    page_fade_start: Option<Instant>,
+    page_opacity: f32,
     _instance_added_subscription: Subscription,
     _instance_modified_subscription: Subscription,
     _instance_removed_subscription: Subscription,
@@ -75,7 +77,7 @@ impl PageType {
                     t::curseforge::name().into()
                 }
             },
-            PageType::Import => "Import".into(),
+            PageType::Import => t::import::title().into(),
             PageType::Syncing => t::instance::sync::label().into(),
             PageType::Performance => t::tools::performance::title().into(),
             PageType::ModrinthProject { project_title, .. } => project_title.clone(),
@@ -244,6 +246,8 @@ impl LauncherUI {
             page_history_forwards: Vec::new(),
             previous_pages: FxHashMap::default(),
             pending_page,
+            page_fade_start: None,
+            page_opacity: 1.0,
             _instance_added_subscription,
             _instance_modified_subscription,
             _instance_removed_subscription,
@@ -337,6 +341,9 @@ impl LauncherUI {
 
     fn switch_page_without_history(&mut self, page: PageType, page_path: Arc<[PageType]>, window: &mut Window, cx: &mut Context<Self>) {
         self.pending_page = None;
+        self.page_fade_start = Some(Instant::now());
+        self.page_opacity = 0.72;
+        animation::request_next_frame(window);
 
         let config = InterfaceConfig::get_mut(cx);
         let previous_page_type = std::mem::replace(&mut config.main_page, page.clone());
@@ -395,6 +402,16 @@ impl LauncherUI {
 
 impl Render for LauncherUI {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if let Some(start) = self.page_fade_start {
+            if let Some(opacity) = animation::page_fade_opacity(start) {
+                self.page_opacity = opacity;
+                animation::request_next_frame(window);
+            } else {
+                self.page_opacity = 1.0;
+                self.page_fade_start = None;
+            }
+        }
+
         if let Some(pending_page) = self.pending_page.clone() {
             if let Ok(page) = Self::create_page(&self.data, pending_page.0.clone(), window, cx) {
                 self.pending_page = None;
@@ -415,7 +432,7 @@ impl Render for LauncherUI {
             (config.main_page.clone(), config.hide_skins)
         };
 
-        let library_group = MenuGroup::new("Minecraft")
+        let library_group = MenuGroup::new(t::sidebar::minecraft())
             .child(MenuGroupItem::new(t::instance::title())
                 .active(page_type == PageType::Instances)
                 .on_click(cx.listener(|launcher, _, window, cx| {
@@ -439,8 +456,8 @@ impl Render for LauncherUI {
                     launcher.switch_page(PageType::Curseforge { installing_for: None }, &[], window, cx);
                 })));
 
-        let files_group = MenuGroup::new("Files")
-            .child(MenuGroupItem::new("Import")
+        let files_group = MenuGroup::new(t::sidebar::files())
+            .child(MenuGroupItem::new(t::import::title())
                 .active(page_type == PageType::Import)
                 .on_click(cx.listener(|launcher, _, window, cx| {
                     launcher.switch_page(PageType::Import, &[], window, cx);
@@ -573,9 +590,14 @@ impl Render for LauncherUI {
             .gap_2()
             .w_full()
             .justify_center()
-            .text_size(rems(0.9375))
-            .child(Icon::new(QuartzIcon::Quartz).size_8().min_w_8().min_h_8())
-            .child(t::common::app_name());
+            .text_size(rems(1.125))
+            .child(QuartzLogo::new(px(32.0)))
+            .child(
+                div()
+                    .font_family(SharedString::new_static(MINECRAFT_FONT))
+                    .text_color(cx.theme().sidebar_primary_foreground)
+                    .child(t::common::launcher_title()),
+            );
         let footer_buttons = h_flex().child(settings_button).child(bug_report_button);
         let footer = v_flex().pb_2().px_2().items_center().min_w_full().max_w_full().w_full().child(footer_buttons).child(account_button);
         let sidebar = v_flex()
@@ -602,7 +624,14 @@ impl Render for LauncherUI {
                 .overflow_y_scrollbar())
             .child(footer);
 
-        ResizePanel::new(&self.sidebar_state, sidebar, self.page.clone().render(&self, window, cx))
+        ResizePanel::new(
+            &self.sidebar_state,
+            sidebar,
+            div()
+                .size_full()
+                .opacity(self.page_opacity)
+                .child(self.page.clone().render(&self, window, cx)),
+        )
     }
 }
 

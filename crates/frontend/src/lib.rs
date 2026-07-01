@@ -33,6 +33,7 @@ pub mod processor;
 pub mod root;
 pub mod skin_renderer;
 pub mod skin_thumbnail_cache;
+pub mod theme;
 pub mod ui;
 
 #[derive(rust_embed::RustEmbed)]
@@ -62,6 +63,8 @@ impl AssetSource for Assets {
 pub const MAIN_FONT: &'static str = "Inter 24pt 24pt";
 #[cfg(not(windows))]
 pub const MAIN_FONT: &'static str = "Inter 24pt";
+
+pub const MINECRAFT_FONT: &'static str = "minecraft";
 
 actions!([Quit, CloseWindow, OpenSettings, Forwards, Backwards]);
 
@@ -96,21 +99,14 @@ pub fn start(
         let theme_folder = launcher_dir.join("themes");
 
         _ = gpui_component::ThemeRegistry::watch_dir(theme_folder.clone(), cx, move |cx| {
-            let theme_name = InterfaceConfig::get(cx).active_theme.clone();
-            if theme_name.is_empty() {
-                return;
-            }
-
-            let Some(theme) = gpui_component::ThemeRegistry::global(cx).themes().get(&SharedString::new(theme_name.trim_ascii())).cloned() else {
-                return;
-            };
-
-            gpui_component::Theme::global_mut(cx).apply_config(&theme);
+            crate::theme::apply_saved_theme(cx);
         });
 
         let theme = gpui_component::Theme::global_mut(cx);
         theme.font_family = SharedString::new_static(MAIN_FONT);
         theme.scrollbar_show = gpui_component::scroll::ScrollbarShow::Always;
+        crate::theme::apply_quartz_branding(theme);
+        crate::theme::apply_saved_theme(cx);
 
         cx.set_quit_mode(QuitMode::Explicit);
 
