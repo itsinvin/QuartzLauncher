@@ -3,7 +3,7 @@ use std::time::Duration;
 use bridge::handle::BackendHandle;
 use gpui::{prelude::*, *};
 use gpui_component::{
-    IndexPath, button::{Button, ButtonVariants}, h_flex, input::{Input, InputEvent, InputState}, select::{Select, SelectDelegate, SelectEvent, SelectItem, SelectState}, table::{DataTable, TableDelegate, TableState}, v_flex, ActiveTheme, Sizable
+    IndexPath, button::{Button, ButtonVariants}, h_flex, input::{Input, InputEvent, InputState}, select::{Select, SelectDelegate, SelectEvent, SelectItem, SelectState}, table::{DataTable, TableState}, v_flex, ActiveTheme, Sizable
 };
 use strum::IntoEnumIterator;
 

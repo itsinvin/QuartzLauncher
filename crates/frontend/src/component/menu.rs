@@ -79,6 +79,7 @@ impl MenuGroupItem {
 impl RenderOnce for MenuGroupItem {
     fn render(self, _window: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
         let theme = cx.theme();
+        let title = self.title.clone();
         let label = h_flex()
             .gap_2()
             .items_center()
@@ -91,10 +92,10 @@ impl RenderOnce for MenuGroupItem {
                         .shadow_sm(),
                 })
             })
-            .child(self.title);
+            .child(title.clone());
 
         let mut item = div()
-            .id(self.title.clone())
+            .id(title)
             .px_2()
             .py_1()
             .text_sm()

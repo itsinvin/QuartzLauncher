@@ -4,6 +4,12 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.10] - 2026-07-01
+
+### Fixed
+- Instance card return type after adding double-click handler
+- Menu item title move/borrow error
+
 ## [5.2.9] - 2026-07-01
 
 ### Fixed

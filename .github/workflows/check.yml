@@ -17,5 +17,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update --yes
+          sudo apt-get install --yes libssl-dev libdbus-1-dev libx11-xcb1 libxkbcommon-x11-dev pkg-config libseccomp-dev libfontconfig-dev
+
       - name: cargo check
         run: cargo check --release -p quartz_launcher

@@ -138,9 +138,9 @@ impl InstanceList {
         })
     }
 
-    pub fn render_card(&self, index: usize, _window: &mut Window, cx: &mut App) -> Div {
+    pub fn render_card(&self, index: usize, _window: &mut Window, cx: &mut App) -> AnyElement {
         let Some(item) = self.item_at(index) else {
-            return div();
+            return div().into_any_element();
         };
         let loader_and_version = format!(
             "{} {}",
@@ -244,6 +244,7 @@ impl InstanceList {
                     }
                 }))
             )
+            .into_any_element()
     }
 }
 
