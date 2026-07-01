@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.11] - 2026-07-01
+
+### Changed
+- CI/CD is Windows-only — faster releases, no Linux/macOS build jobs
+
 ## [5.2.10] - 2026-07-01
 
 ### Fixed

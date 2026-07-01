@@ -6,11 +6,11 @@ Quartz Launcher is an enhanced fork of [PandoraLauncher](https://github.com/Moul
 
 Prebuilt releases are on [GitHub Releases](https://github.com/itsinvin/QuartzLauncher/releases).
 
-| Platform | Installer | Portable |
-|----------|-----------|----------|
-| Windows  | `QuartzLauncher-Windows-x86_64-Setup.exe` | `QuartzLauncher-Windows-x86_64-Portable.exe` |
-| Linux    | AppImage (see releases) | `QuartzLauncher-Linux-x86_64-Portable` |
-| macOS    | `QuartzLauncher.dmg` | `QuartzLauncher-macOS-Universal-Portable` |
+Quartz Launcher is **Windows only** (x86_64).
+
+| Installer | Portable |
+|-----------|----------|
+| `QuartzLauncher-Windows-x86_64-Setup.exe` | `QuartzLauncher-Windows-x86_64-Portable.exe` |
 
 ## Features
 
@@ -39,11 +39,7 @@ Requires a recent Rust toolchain (edition 2024).
 cargo build --release
 ```
 
-Platform-specific packaging scripts live in `scripts/`:
-
-- `scripts/build_linux.sh`
-- `scripts/build_windows.sh`
-- `scripts/build_mac.sh`
+Windows packaging: `scripts/build_windows.sh`
 
 ## Attribution
 

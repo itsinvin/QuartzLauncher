@@ -22,7 +22,7 @@ After every build-worthy change set, publish a GitHub release. Do not leave fixe
 
 ## After CI completes
 
-1. Verify the [Releases](https://github.com/itsinvin/QuartzLauncher/releases) page has artifacts (Windows Setup.exe, portable builds, Linux AppImage, macOS dmg).
+1. Verify the [Releases](https://github.com/itsinvin/QuartzLauncher/releases) page has Windows artifacts (`QuartzLauncher-Windows-x86_64-Setup.exe` and portable exe).
 2. Confirm release notes include the `CHANGELOG.md` entry and download links.
 
 ## Windows installer
