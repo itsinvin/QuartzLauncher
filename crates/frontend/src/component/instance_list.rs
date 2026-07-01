@@ -193,7 +193,7 @@ impl InstanceList {
                 if status == InstanceStatus::NotRunning {
                     root::start_instance(id, name.clone(), None, &backend_handle, window, cx);
                 }
-            }))
+            })
             .child(h_flex()
                 .w_full()
                 .gap_3()
@@ -242,8 +242,9 @@ impl InstanceList {
                         root::switch_page(ui::PageType::InstancePage { name: name.clone() },
                             &[ui::PageType::Instances], window, cx);
                     }
-                })))
-    }}
+                }))
+            )
+    }
 
 impl TableDelegate for InstanceList {
     fn columns_count(&self, _cx: &App) -> usize {
