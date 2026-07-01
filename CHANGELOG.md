@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.8] - 2026-07-01
+
+### Fixed
+- CI build: missing closing brace on `impl InstanceList` in instance card renderer
+
 ## [5.2.7] - 2026-07-01
 
 ### Fixed

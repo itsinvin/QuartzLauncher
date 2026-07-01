@@ -245,6 +245,7 @@ impl InstanceList {
                 }))
             )
     }
+}
 
 impl TableDelegate for InstanceList {
     fn columns_count(&self, _cx: &App) -> usize {
