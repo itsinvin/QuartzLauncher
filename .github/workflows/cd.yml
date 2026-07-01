@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         platform:
           - os_name: Linux-x86_64
@@ -43,6 +43,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Install mold linker
+        if: matrix.platform.os == 'ubuntu-latest'
         uses: rui314/setup-mold@v1
 
       - name: Run build script
@@ -52,7 +53,7 @@ jobs:
           PANDORA_UPDATE_PUBKEY: ${{ secrets.SIGNER_PUBLIC_KEY }}
           GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
           PANDORA_DISTRIBUTION: official
-        run: ${{ matrix.platform.buildscript }} ${{ github.ref_name }}
+        run: bash ${{ matrix.platform.buildscript }} ${{ github.ref_name }}
         shell: bash
 
       - name: Upload artifacts
