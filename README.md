@@ -2,7 +2,15 @@
 
 Quartz Launcher is an enhanced fork of [PandoraLauncher](https://github.com/Moulberry/PandoraLauncher) — a modern, native Minecraft launcher built with Rust and GPUI. It keeps Pandora's full feature set and adds new tools on top.
 
-**Repository:** https://github.com/itsinvin/QuartzLauncher
+## Downloads
+
+Prebuilt releases are on [GitHub Releases](https://github.com/itsinvin/QuartzLauncher/releases).
+
+| Platform | Installer | Portable |
+|----------|-----------|----------|
+| Windows  | `QuartzLauncher-Windows-x86_64-Setup.exe` | `QuartzLauncher-Windows-x86_64-Portable.exe` |
+| Linux    | AppImage (see releases) | `QuartzLauncher-Linux-x86_64-Portable` |
+| macOS    | `QuartzLauncher.dmg` | `QuartzLauncher-macOS-Universal-Portable` |
 
 ## Features
 

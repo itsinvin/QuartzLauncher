@@ -34,6 +34,7 @@ mv -f 'dist/QuartzLauncher-Windows-x86_64_'$version'_x64-setup.exe' dist/QuartzL
 
 if [[ -n "$CARGO_PACKAGER_SIGN_PRIVATE_KEY" ]]; then
     cargo packager signer sign dist/QuartzLauncher-Windows-x86_64-Portable.exe
+    cargo packager signer sign dist/QuartzLauncher-Windows-x86_64-Setup.exe
 
     echo "{
     \"version\": \"$version\",

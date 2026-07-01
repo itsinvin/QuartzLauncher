@@ -72,6 +72,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## Downloads
+
+            ### Windows
+            - **Installer:** `QuartzLauncher-Windows-x86_64-Setup.exe`
+            - **Portable:** `QuartzLauncher-Windows-x86_64-Portable.exe`
+
+            ### Linux
+            - **AppImage:** `QuartzLauncher-Linux-x86_64.AppImage`
+            - **Portable:** `QuartzLauncher-Linux-x86_64-Portable`
+
+            ### macOS
+            - **Disk image:** `QuartzLauncher.dmg`
+            - **Portable:** `QuartzLauncher-macOS-Universal-Portable`
+            - **App bundle:** `QuartzLauncher.app.tar.gz`
           files: ./artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
