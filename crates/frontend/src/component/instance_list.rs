@@ -9,6 +9,9 @@ use crate::{component::animation::format_last_played, entity::{
     }, png_render_cache, root, ui,
 };
 
+fn instance_is_active(status: InstanceStatus) -> bool {
+    matches!(status, InstanceStatus::Running | InstanceStatus::Launching)
+}
 pub struct InstanceList {
     columns: Vec<Column>,
     items: Vec<InstanceEntry>,
@@ -135,7 +138,7 @@ impl InstanceList {
         })
     }
 
-    pub fn render_card(&self, index: usize, cx: &mut App) -> Div {
+    pub fn render_card(&self, index: usize, _window: &mut Window, cx: &mut App) -> Div {
         let Some(item) = self.item_at(index) else {
             return div();
         };
@@ -146,6 +149,7 @@ impl InstanceList {
         );
         let last_played = format_last_played(item.playtime.last_played_unix_ms);
         let real_index = self.visible_indices[index];
+        let is_active = instance_is_active(item.status);
 
         let icon = if let Some(icon) = item.icon.clone() {
             let transform = png_render_cache::ImageTransformation::Resize { width: 64, height: 64 };
@@ -161,33 +165,75 @@ impl InstanceList {
         let play_button = render_play_button(item, real_index, self.backend_handle.clone());
 
         let theme = cx.theme();
+        let id = item.id;
+        let name = item.name.clone();
+        let status = item.status;
+        let backend_handle = self.backend_handle.clone();
+
         v_flex()
+            .id(("instance-card", real_index))
             .flex_1()
-            .p_2()
+            .p_3()
             .gap_2()
             .w_full()
             .min_w_64()
+            .bg(theme.muted)
             .border_1()
-            .border_color(theme.border)
+            .border_color(if is_active {
+                theme.success.opacity(0.55)
+            } else {
+                theme.border
+            })
             .rounded(theme.radius_lg)
-            .hover(|this| this.border_color(theme.ring.opacity(0.6)))
+            .hover(|this| {
+                this.border_color(theme.sidebar_primary.opacity(0.85))
+                    .bg(theme.list_hover)
+            })
+            .on_double_click(move |_, window, cx| {
+                if status == InstanceStatus::NotRunning {
+                    root::start_instance(id, name.clone(), None, &backend_handle, window, cx);
+                }
+            }))
             .child(h_flex()
                 .w_full()
-                .gap_2()
+                .gap_3()
                 .child(icon)
                 .child(v_flex()
                     .truncate()
-                    .w_full()
-                    .child(item.name.clone())
-                    .child(loader_and_version)
+                    .flex_1()
+                    .gap_0p5()
+                    .child(h_flex()
+                        .gap_2()
+                        .items_center()
+                        .child(item.name.clone())
+                        .when(is_active, |this| {
+                            this.child(
+                                div()
+                                    .px_1p5()
+                                    .py_0p5()
+                                    .text_xs()
+                                    .rounded(theme.radius)
+                                    .bg(theme.success.opacity(0.18))
+                                    .text_color(theme.success)
+                                    .child(t::instance::running()),
+                            )
+                        })
+                    )
+                    .child(
+                        div()
+                            .text_sm()
+                            .text_color(theme.muted_foreground)
+                            .child(loader_and_version),
+                    )
                     .child(
                         div()
                             .text_xs()
-                            .text_color(theme.muted_foreground)
+                            .text_color(theme.muted_foreground.opacity(0.85))
                             .child(last_played),
                     )
                 )
-            ).child(h_flex()
+            )
+            .child(h_flex()
                 .gap_2()
                 .child(play_button.flex_1().small())
                 .child(Button::new(("view", real_index)).flex_1().small().info().label(t::instance::view()).on_click({
@@ -197,9 +243,7 @@ impl InstanceList {
                             &[ui::PageType::Instances], window, cx);
                     }
                 })))
-
-    }
-}
+    }}
 
 impl TableDelegate for InstanceList {
     fn columns_count(&self, _cx: &App) -> usize {
@@ -236,14 +280,29 @@ impl TableDelegate for InstanceList {
         }
     }
 
-    fn render_td(&mut self, row_ix: usize, col_ix: usize, _window: &mut Window, _cx: &mut Context<TableState<Self>>) -> impl IntoElement {
+    fn render_td(&mut self, row_ix: usize, col_ix: usize, _window: &mut Window, cx: &mut Context<TableState<Self>>) -> impl IntoElement {
         let Some(item) = self.item_at(row_ix) else {
             return t::common::unknown().into_any_element();
         };
         let real_index = self.visible_indices[row_ix];
         if let Some(col) = self.columns.get(col_ix) {
             match col.key.as_ref() {
-                "name" => item.name.clone().into_any_element(),
+                "name" => {
+                    let is_active = instance_is_active(item.status);
+                    h_flex()
+                        .gap_2()
+                        .items_center()
+                        .child(item.name.clone())
+                        .when(is_active, |this| {
+                            this.child(
+                                div()
+                                    .size_2()
+                                    .rounded_full()
+                                    .bg(cx.theme().success),
+                            )
+                        })
+                        .into_any_element()
+                },
                 "version" => item.configuration.minecraft_version.as_str().into_any_element(),
                 "controls" => {
                     let play_button = render_play_button(item, real_index, self.backend_handle.clone());

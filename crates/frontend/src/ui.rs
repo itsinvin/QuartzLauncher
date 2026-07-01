@@ -1,6 +1,6 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::{collections::VecDeque, sync::Arc, time::Duration};
 
-use bridge::instance::InstanceID;
+use bridge::instance::{InstanceID, InstanceStatus};
 use gpui::{prelude::*, *};
 use gpui_component::{
     ActiveTheme as _, InteractiveElementExt, WindowExt, h_flex, notification::{Notification, NotificationType}, scroll::ScrollableElement, tooltip::Tooltip, v_flex
@@ -10,7 +10,7 @@ use schema::pandora_update::UpdatePrompt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    component::{menu::{MenuGroup, MenuGroupItem}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
+    component::{animation, menu::{MenuGroup, MenuGroupItem, MenuIndicator}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
         DataEntities, account::AccountExt, instance::{InstanceAddedEvent, InstanceEntries, InstanceModifiedEvent, InstanceMovedToTopEvent, InstanceRemovedEvent}
     }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
 };
@@ -25,6 +25,7 @@ pub struct LauncherUI {
     page_history_forwards: Vec<(PageType, Arc<[PageType]>)>,
     previous_pages: FxHashMap<PageType, LauncherPage>,
     pending_page: Option<(PageType, Arc<[PageType]>)>,
+    page_opacity: f32,
     _instance_added_subscription: Subscription,
     _instance_modified_subscription: Subscription,
     _instance_removed_subscription: Subscription,
@@ -244,6 +245,7 @@ impl LauncherUI {
             page_history_forwards: Vec::new(),
             previous_pages: FxHashMap::default(),
             pending_page,
+            page_opacity: 1.0,
             _instance_added_subscription,
             _instance_modified_subscription,
             _instance_removed_subscription,
@@ -337,6 +339,7 @@ impl LauncherUI {
 
     fn switch_page_without_history(&mut self, page: PageType, page_path: Arc<[PageType]>, window: &mut Window, cx: &mut Context<Self>) {
         self.pending_page = None;
+        self.page_opacity = 0.78;
 
         let config = InterfaceConfig::get_mut(cx);
         let previous_page_type = std::mem::replace(&mut config.main_page, page.clone());
@@ -346,6 +349,7 @@ impl LauncherUI {
         if let Some(previous_page) = self.previous_pages.remove(&page) {
             self.page = previous_page;
             self.previous_pages.retain(|k, _| page_path.contains(k));
+            Self::animate_page_in(cx);
             cx.notify();
             return;
         }
@@ -367,7 +371,28 @@ impl LauncherUI {
             },
         }
 
+        Self::animate_page_in(cx);
         cx.notify();
+    }
+
+    fn animate_page_in(cx: &mut Context<Self>) {
+        let entity = cx.entity();
+        let start = 0.78f32;
+        cx.spawn(async move |cx| {
+            let steps = 14u32;
+            for i in 0..=steps {
+                let t = animation::ease_out_cubic(i as f32 / steps as f32);
+                let opacity = animation::lerp(start, 1.0, t);
+                let _ = entity.update(cx, |this, cx| {
+                    this.page_opacity = opacity;
+                    cx.notify();
+                });
+                if i < steps {
+                    cx.background_executor().timer(Duration::from_millis(16)).await;
+                }
+            }
+        })
+        .detach();
     }
 
     pub fn nav_backwards(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -458,12 +483,51 @@ impl Render for LauncherUI {
                     launcher.switch_page(PageType::Performance, &[], window, cx);
                 })));
 
-        let mut groups: heapless::Vec<MenuGroup, 5> = heapless::Vec::new();
+        let mut groups: heapless::Vec<MenuGroup, 6> = heapless::Vec::new();
 
         let _ = groups.push(library_group);
         let _ = groups.push(content_group);
         let _ = groups.push(files_group);
         let _ = groups.push(tools_group);
+
+        let running_instances: Vec<(InstanceID, SharedString)> = self
+            .data
+            .instances
+            .read(cx)
+            .entries
+            .values()
+            .filter_map(|entry| {
+                let entry = entry.read(cx);
+                match entry.status {
+                    InstanceStatus::Running | InstanceStatus::Launching => {
+                        Some((entry.id, entry.name.clone()))
+                    },
+                    _ => None,
+                }
+            })
+            .collect();
+
+        if !running_instances.is_empty() {
+            let mut running_group = MenuGroup::new(t::sidebar::running());
+            for (_, name) in running_instances {
+                let name = name.clone();
+                let active = page_type == PageType::InstancePage { name: name.clone() };
+                running_group = running_group.child(
+                    MenuGroupItem::new(name.clone())
+                        .indicator(MenuIndicator::Running)
+                        .active(active)
+                        .on_click(cx.listener(move |launcher, _, window, cx| {
+                            launcher.switch_page(
+                                PageType::InstancePage { name: name.clone() },
+                                &[PageType::Instances],
+                                window,
+                                cx,
+                            );
+                        })),
+                );
+            }
+            let _ = groups.push(running_group);
+        }
 
         if !self.recent_instances.is_empty() {
             let mut recent_instances_group = MenuGroup::new(t::instance::recent());
@@ -566,20 +630,25 @@ impl Render for LauncherUI {
                 }
             });
 
-        let header = h_flex()
-            .when_else(cfg!(target_os = "macos"), |this| this.pt(px(9.0)), |this| this.pt(px(14.0)))
-            .px_5()
-            .pb_2()
-            .gap_2()
-            .w_full()
-            .justify_center()
-            .text_size(rems(1.125))
-            .child(QuartzLogo::new(px(32.0)))
+        let header = v_flex()
+            .border_b_1()
+            .border_color(cx.theme().sidebar_primary.opacity(0.25))
             .child(
-                div()
-                    .font_family(SharedString::new_static(MINECRAFT_FONT))
-                    .text_color(cx.theme().sidebar_primary_foreground)
-                    .child(t::common::app_name()),
+                h_flex()
+                    .when_else(cfg!(target_os = "macos"), |this| this.pt(px(9.0)), |this| this.pt(px(14.0)))
+                    .px_5()
+                    .pb_3()
+                    .gap_2()
+                    .w_full()
+                    .justify_center()
+                    .text_size(rems(1.125))
+                    .child(QuartzLogo::new(px(32.0)))
+                    .child(
+                        div()
+                            .font_family(SharedString::new_static(MINECRAFT_FONT))
+                            .text_color(cx.theme().sidebar_primary)
+                            .child(t::common::app_name()),
+                    ),
             );
         let footer_buttons = h_flex().child(settings_button).child(bug_report_button);
         let footer = v_flex().pb_2().px_2().items_center().min_w_full().max_w_full().w_full().child(footer_buttons).child(account_button);
@@ -612,6 +681,7 @@ impl Render for LauncherUI {
             sidebar,
             div()
                 .size_full()
+                .opacity(self.page_opacity)
                 .child(self.page.render(&self, window, cx)),
         )
     }

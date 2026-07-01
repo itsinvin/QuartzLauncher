@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bridge::handle::BackendHandle;
 use gpui::{prelude::*, *};
 use gpui_component::{
@@ -6,7 +8,7 @@ use gpui_component::{
 use strum::IntoEnumIterator;
 
 use crate::{
-    component::{instance_list::InstanceList, named_dropdown::{NamedDropdown, NamedDropdownItem}, quartz_logo::QuartzLogo, responsive_grid::ResponsiveGrid}, entity::{DataEntities, instance::InstanceEntries, metadata::FrontendMetadata}, icon::QuartzIcon, interface_config::{InstancesViewMode, InterfaceConfig}, pages::page::Page,
+    component::{animation, instance_list::InstanceList, named_dropdown::{NamedDropdown, NamedDropdownItem}, quartz_logo::QuartzLogo, responsive_grid::ResponsiveGrid}, entity::{DataEntities, instance::InstanceEntries, metadata::FrontendMetadata}, icon::QuartzIcon, interface_config::{InstancesViewMode, InterfaceConfig}, pages::page::Page,
     modals, MINECRAFT_FONT,
 };
 
@@ -15,6 +17,7 @@ pub struct InstancesPage {
     view_dropdown: Entity<SelectState<NamedDropdown<InstancesViewMode>>>,
     search_state: Entity<InputState>,
     _search_subscription: Subscription,
+    search_generation: usize,
 
     metadata: Entity<FrontendMetadata>,
     instances: Entity<InstanceEntries>,
@@ -50,11 +53,22 @@ impl InstancesPage {
             let InputEvent::Change = event else {
                 return;
             };
+            this.search_generation += 1;
+            let generation = this.search_generation;
             let query = state.read(cx).text().to_string();
-            this.instance_table.update(cx, |table, cx| {
-                table.delegate_mut().set_filter(query.into());
-                cx.notify();
-            });
+            let page_entity = cx.entity();
+            cx.spawn(async move |cx| {
+                cx.background_executor().timer(Duration::from_millis(250)).await;
+                let _ = page_entity.update(cx, |page, cx| {
+                    if page.search_generation != generation {
+                        return;
+                    }
+                    page.instance_table.update(cx, |table, cx| {
+                        table.delegate_mut().set_filter(query.into());
+                        cx.notify();
+                    });
+                });
+            }).detach();
         });
 
         Self {
@@ -62,6 +76,7 @@ impl InstancesPage {
             view_dropdown,
             search_state,
             _search_subscription,
+            search_generation: 0,
             metadata: data.metadata.clone(),
             instances: data.instances.clone(),
             backend_handle: data.backend_handle.clone(),
@@ -84,7 +99,8 @@ impl Page for InstancesPage {
 
         h_flex()
             .gap_3()
-            .child(Input::new(&self.search_state).w_48().small())
+            .flex_1()
+            .child(Input::new(&self.search_state).flex_1().min_w_48().small())
             .child(create_instance)
             .child(select_view)
     }
@@ -98,24 +114,35 @@ impl Page for InstancesPage {
 }
 
 impl Render for InstancesPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let delegate = self.instance_table.read(cx).delegate();
         let is_empty = delegate.has_no_instances();
         let no_results = delegate.has_no_visible_instances() && delegate.is_filter_active();
 
         if is_empty {
             let theme = cx.theme();
+            let logo_scale = animation::animated_logo_scale(window, cx);
+            let logo_size = px(64.0 * logo_scale);
             return v_flex()
                 .size_full()
                 .p_8()
                 .gap_4()
                 .justify_center()
                 .items_center()
-                .child(QuartzLogo::new(px(64.0)))
+                .child(
+                    div()
+                        .p_4()
+                        .rounded(theme.radius_lg)
+                        .border_1()
+                        .border_color(theme.sidebar_primary.opacity(0.35))
+                        .bg(theme.muted)
+                        .child(QuartzLogo::new(logo_size)),
+                )
                 .child(
                     div()
                         .text_xl()
-                        .font_family(SharedString::new_static(crate::MINECRAFT_FONT))
+                        .font_family(SharedString::new_static(MINECRAFT_FONT))
+                        .text_color(theme.sidebar_primary)
                         .child(t::instance::welcome::title()),
                 )
                 .child(
@@ -159,7 +186,9 @@ impl Render for InstancesPage {
             InstancesViewMode::Cards => {
                 let cards = self.instance_table.update(cx, |table, cx| {
                     let rows = table.delegate().visible_count();
-                    (0..rows).map(|i| table.delegate().render_card(i, cx)).collect::<Vec<_>>()
+                    (0..rows)
+                        .map(|i| table.delegate().render_card(i, window, cx))
+                        .collect::<Vec<_>>()
                 });
 
                 let size = Size::new(

@@ -1,7 +1,12 @@
 use std::rc::Rc;
 
-use gpui::{prelude::*, transparent_black, App, ClickEvent, InteractiveElement, IntoElement, ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div};
+use gpui::{prelude::*, transparent_black, App, ClickEvent, InteractiveElement, IntoElement, ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div, h_flex};
 use gpui_component::{ActiveTheme, StyledExt, v_flex};
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MenuIndicator {
+    Running,
+}
 
 #[derive(IntoElement)]
 pub struct MenuGroup {
@@ -27,11 +32,14 @@ impl RenderOnce for MenuGroup {
     fn render(self, _window: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
         let title = div()
             .px_2()
+            .pt_1()
             .text_xs()
-            .text_color(cx.theme().sidebar_foreground.opacity(0.7))
+            .font_medium()
+            .tracking_wide()
+            .text_color(cx.theme().sidebar_foreground.opacity(0.55))
             .child(self.title);
 
-        v_flex().gap_1().child(title).children(self.children)
+        v_flex().gap_0p5().child(title).children(self.children)
     }
 }
 
@@ -39,6 +47,7 @@ impl RenderOnce for MenuGroup {
 pub struct MenuGroupItem {
     title: SharedString,
     active: bool,
+    indicator: Option<MenuIndicator>,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
 }
 
@@ -47,12 +56,18 @@ impl MenuGroupItem {
         Self {
             title: title.into(),
             active: false,
+            indicator: None,
             on_click: None,
         }
     }
 
     pub fn active(mut self, active: bool) -> Self {
         self.active = active;
+        self
+    }
+
+    pub fn indicator(mut self, indicator: MenuIndicator) -> Self {
+        self.indicator = Some(indicator);
         self
     }
 
@@ -63,14 +78,29 @@ impl MenuGroupItem {
 }
 
 impl RenderOnce for MenuGroupItem {
-    fn render(self, _window: &mut gpui::Window, cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _window: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
+        let theme = cx.theme();
+        let label = h_flex()
+            .gap_2()
+            .items_center()
+            .when_some(self.indicator, |this, indicator| {
+                this.child(match indicator {
+                    MenuIndicator::Running => div()
+                        .size_2()
+                        .rounded_full()
+                        .bg(theme.success)
+                        .shadow_sm(),
+                })
+            })
+            .child(self.title);
+
         let mut item = div()
             .id(self.title.clone())
             .px_2()
-            .py_0p5()
+            .py_1()
             .text_sm()
-            .child(self.title)
-            .rounded(cx.theme().radius)
+            .child(label)
+            .rounded(theme.radius)
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |event, window, cx| {
                     (on_click)(event, window, cx);
@@ -78,20 +108,21 @@ impl RenderOnce for MenuGroupItem {
             });
 
         if self.active {
-            item = item.font_medium()
-                .bg(cx.theme().sidebar_accent)
-                .text_color(cx.theme().sidebar_accent_foreground)
+            item = item
+                .font_medium()
+                .bg(theme.sidebar_accent)
+                .text_color(theme.sidebar_accent_foreground)
                 .border_l_2()
-                .border_color(cx.theme().sidebar_primary);
+                .border_color(theme.sidebar_primary);
         } else {
             item = item
                 .border_l_2()
                 .border_color(transparent_black())
                 .hover(|this| {
-                    this.bg(cx.theme().sidebar_accent.opacity(0.85))
-                        .text_color(cx.theme().sidebar_accent_foreground)
-                        .border_color(cx.theme().sidebar_primary.opacity(0.5))
-                })
+                    this.bg(theme.sidebar_accent.opacity(0.9))
+                        .text_color(theme.sidebar_accent_foreground)
+                        .border_color(theme.sidebar_primary.opacity(0.45))
+                });
         }
 
         item

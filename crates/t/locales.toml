@@ -848,6 +848,26 @@ en = "Played just now"
 de = "Gerade gespielt"
 hu = "Most játszott"
 sv = "Spelade precis"
+[instance.last_played_minutes_ago]
+en = "${minutes:i64}m ago"
+de = "vor ${minutes:i64} Min."
+hu = "${minutes:i64} perce"
+sv = "${minutes:i64} min sedan"
+[instance.last_played_hours_ago]
+en = "${hours:i64}h ago"
+de = "vor ${hours:i64} Std."
+hu = "${hours:i64} órája"
+sv = "${hours:i64} tim sedan"
+[instance.last_played_days_ago]
+en = "${days:i64}d ago"
+de = "vor ${days:i64} Tg."
+hu = "${days:i64} napja"
+sv = "${days:i64} dagar sedan"
+[instance.running]
+en = "Running"
+de = "Läuft"
+hu = "Fut"
+sv = "Körs"
 [instance.welcome.title]
 en = "Welcome to Quartz"
 de = "Willkommen bei Quartz"
@@ -2173,6 +2193,11 @@ en = "Minecraft"
 de = "Minecraft"
 hu = "Minecraft"
 sv = "Minecraft"
+[sidebar.running]
+en = "Running"
+de = "Aktiv"
+hu = "Futó"
+sv = "Körs"
 [sidebar.files]
 en = "Files"
 de = "Dateien"

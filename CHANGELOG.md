@@ -4,6 +4,21 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.6] - 2026-07-01
+
+### Added
+- Quartz block theme — off-white crystal accents on a cool dark base (Prism/Modrinth-style dark launcher)
+- Smooth page fade-in when switching tabs (async animation, no crash)
+- Running instances section in the sidebar with live green indicator
+- Instance card polish: running badge, double-click to play, quartz hover borders
+- Breathing animation on the welcome-screen quartz logo
+- Debounced instance search and full-width search bar
+- Localized relative last-played times
+
+### Changed
+- Sidebar menu typography and hover states
+- Instance cards use elevated muted panels with clearer version/loader layout
+
 ## [5.2.5] - 2026-07-01
 
 ### Fixed
