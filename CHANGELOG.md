@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - CI build syntax error in instance card renderer (mismatched delimiters)
+- Stale `Cargo.lock` workspace versions causing `--frozen` build failures on CI
 
 ## [5.2.6] - 2026-07-01
 
