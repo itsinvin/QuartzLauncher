@@ -1,0 +1,10 @@
+[package]
+name = "prediction"
+version.workspace = true
+edition.workspace = true
+description = "Hardware detection and performance prediction for quartz launcher"
+license = "MIT"
+
+[dependencies]
+serde = { workspace = true }
+sysinfo = "0.31.4"

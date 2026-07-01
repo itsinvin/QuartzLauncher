@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Game;LauncherStore;GameTool
+Exec=quartz_launcher
+Icon=com.moulberry.QuartzLauncher
+Name=Quartz Launcher
+Terminal=false
+Type=Application
+X-Desktop-File-Install-Version=0.28
+Keywords=Games;Minecraft;ModManager;Launcher;RustLang
+X-Flatpak=com.moulberry.QuartzLauncher

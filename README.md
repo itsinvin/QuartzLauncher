@@ -1,0 +1,56 @@
+# Quartz Launcher
+
+Quartz Launcher is an enhanced fork of [PandoraLauncher](https://github.com/Moulberry/PandoraLauncher) — a modern, native Minecraft launcher built with Rust and GPUI. It keeps Pandora's full feature set and adds new tools on top.
+
+**Repository:** https://github.com/itsinvin/QuartzLauncher
+
+## Features
+
+Everything from Pandora, including:
+
+- Instance management with cards and list views
+- Cross-instance file syncing (options, saves, resource packs, and more)
+- Mod deduplication via hard links when installed through the launcher
+- Secure account credential storage using platform keyrings
+- Custom game output window
+- Modrinth and CurseForge content browsers
+- Automatic redaction of sensitive information in logs
+- Import from other launchers
+- Unique modpack management workflow
+
+Quartz enhancements:
+
+- **Performance estimator** (Tools → Performance) — hardware-aware FPS and RAM estimates for modded workloads. This is one utility among many, not the focus of the launcher.
+- Rebranded UI and data paths under `QuartzLauncher`
+
+## Building
+
+Requires a recent Rust toolchain (edition 2024).
+
+```bash
+cargo build --release
+```
+
+Platform-specific packaging scripts live in `scripts/`:
+
+- `scripts/build_linux.sh`
+- `scripts/build_windows.sh`
+- `scripts/build_mac.sh`
+
+## Attribution
+
+Quartz Launcher is based on [PandoraLauncher](https://github.com/Moulberry/PandoraLauncher) by Moulberry. Pandora is licensed under its original terms; see upstream for details.
+
+## FAQ
+
+### Where can I suggest a feature or report a bug?
+
+Please use GitHub issues on this repository.
+
+### Why Quartz instead of Pandora?
+
+Quartz is a community fork that preserves Pandora's architecture and features while adding optional tools (like performance estimation) and independent branding. It is not affiliated with the original Pandora project.
+
+### Will Quartz be monetized?
+
+No. Quartz follows the same philosophy as Pandora: no ads, no monetization.
