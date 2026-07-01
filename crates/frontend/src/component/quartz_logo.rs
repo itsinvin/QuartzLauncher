@@ -5,7 +5,9 @@ use schema::unique_bytes::UniqueBytes;
 use crate::png_render_cache::{self, ImageTransformation};
 
 static QUARTZ_BLOCK: Lazy<UniqueBytes> = Lazy::new(|| {
-    UniqueBytes::new(include_bytes!("../../../assets/images/quartz_block.png"))
+    let file = crate::Assets::get("images/quartz_block.png")
+        .expect("quartz_block.png missing from embedded assets");
+    UniqueBytes::new(file.data.as_ref())
 });
 
 /// The Minecraft Block of Quartz texture used as the Quartz Launcher logo.
@@ -22,7 +24,7 @@ impl QuartzLogo {
 
 impl RenderOnce for QuartzLogo {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let pixels = self.size.0.round().max(1.0) as u32;
+        let pixels = u32::from(self.size).max(1);
         let transform = ImageTransformation::Resize {
             width: pixels,
             height: pixels,

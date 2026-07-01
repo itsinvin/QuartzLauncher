@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Red error toast when no update manifest is published (404 is now handled silently)
 - Quartz block logo rendering for crisp pixel-art display in the sidebar and empty state
 - Sidebar header text now shows **Quartz** instead of "Quartz Launcher"
+- CI build failure in quartz logo component (embedded asset path and `Pixels` conversion)
 
 ### Removed
 - Page fade transition on tab switch (stability fix)
