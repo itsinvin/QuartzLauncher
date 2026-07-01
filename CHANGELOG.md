@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.5] - 2026-07-01
+
+### Fixed
+- Quartz block logo showing a magenta missing-texture checkerboard (asset was WebP data saved as `.png`; replaced with a real 16×16 PNG and regenerated app icons)
+
 ## [5.2.4] - 2026-07-01
 
 ### Fixed
