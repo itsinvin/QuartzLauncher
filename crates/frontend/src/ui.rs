@@ -3,7 +3,7 @@ use std::{collections::VecDeque, sync::Arc, time::Instant};
 use bridge::instance::InstanceID;
 use gpui::{prelude::*, *};
 use gpui_component::{
-    ActiveTheme as _, Icon, InteractiveElementExt, WindowExt, h_flex, notification::{Notification, NotificationType}, scroll::ScrollableElement, tooltip::Tooltip, v_flex
+    ActiveTheme as _, InteractiveElementExt, WindowExt, h_flex, notification::{Notification, NotificationType}, scroll::ScrollableElement, tooltip::Tooltip, v_flex
 };
 use rustc_hash::FxHashMap;
 use schema::pandora_update::UpdatePrompt;

@@ -67,6 +67,10 @@ impl InstanceList {
         !self.filter_query.is_empty()
     }
 
+    pub fn visible_count(&self) -> usize {
+        self.visible_indices.len()
+    }
+
     fn sort_by_last_played(items: &mut [InstanceEntry]) {
         items.sort_by_key(|item| -(item.playtime.last_played_unix_ms.unwrap_or(0)));
     }

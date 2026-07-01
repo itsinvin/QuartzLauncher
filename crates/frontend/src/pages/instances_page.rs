@@ -158,7 +158,7 @@ impl Render for InstancesPage {
         match InterfaceConfig::get(cx).instances_view_mode {
             InstancesViewMode::Cards => {
                 let cards = self.instance_table.update(cx, |table, cx| {
-                    let rows = table.delegate().visible_indices.len();
+                    let rows = table.delegate().visible_count();
                     (0..rows).map(|i| table.delegate().render_card(i, cx)).collect::<Vec<_>>()
                 });
 

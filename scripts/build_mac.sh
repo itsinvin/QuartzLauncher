@@ -9,7 +9,15 @@ fi
 version=${1#v}
 export PANDORA_RELEASE_VERSION=$version
 
-python3 scripts/generate_icons.py
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+fi
+
+if [ -n "${PYTHON:-}" ] && $PYTHON -c "import PIL" 2>/dev/null; then
+    $PYTHON scripts/generate_icons.py
+fi
 if [ ! -f package/mac.icns ] && command -v iconutil >/dev/null 2>&1; then
     (cd package && iconutil -c icns mac.iconset && rm -rf mac.iconset)
 fi

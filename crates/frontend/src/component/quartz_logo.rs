@@ -1,4 +1,4 @@
-use gpui::{img, prelude::*, ImageSource, IntoElement, ObjectFit, Pixels, RenderOnce, Resource, Window};
+use gpui::{img, prelude::*, App, ImageSource, IntoElement, ObjectFit, Pixels, RenderOnce, Resource, Window};
 
 /// The Minecraft Block of Quartz texture used as the Quartz Launcher logo.
 #[derive(IntoElement, Clone, Copy)]

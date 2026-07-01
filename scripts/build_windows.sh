@@ -9,7 +9,15 @@ fi
 version=${1#v}
 export PANDORA_RELEASE_VERSION=$version
 
-python3 scripts/generate_icons.py
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+    PYTHON=python
+fi
+
+if [ -n "${PYTHON:-}" ] && $PYTHON -c "import PIL" 2>/dev/null; then
+    $PYTHON scripts/generate_icons.py
+fi
 
 cargo build --release --frozen --target x86_64-pc-windows-msvc
 strip target/x86_64-pc-windows-msvc/release/quartz_launcher.exe
