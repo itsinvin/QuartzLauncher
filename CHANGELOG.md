@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.33] - 2026-07-02
+
+### Fixed
+- CI release build failure (`gpui-component` vendoring lockfile conflict)
+
 ## [5.2.32] - 2026-07-02
 
 ### Added

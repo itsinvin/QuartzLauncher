@@ -1,11 +1,6 @@
 [source.crates-io]
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/longbridge/gpui-component.git?rev=2f7c7445d8c55e4af95c2a22695184ea8df35a32"]
-git = "https://github.com/longbridge/gpui-component.git"
-rev = "2f7c7445d8c55e4af95c2a22695184ea8df35a32"
-replace-with = "vendored-sources"
-
 [source."git+https://github.com/zed-industries/font-kit?rev=110523127440aefb11ce0cf280ae7c5071337ec5"]
 git = "https://github.com/zed-industries/font-kit"
 rev = "110523127440aefb11ce0cf280ae7c5071337ec5"
