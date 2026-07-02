@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.31] - 2026-07-02
+
+### Fixed
+- v5.2.30 failed to build (broken `gpui-component` vendor patch); Modrinth descriptions now render as plain text instead of markdown to avoid tree-sitter deadlocks
+
 ## [5.2.30] - 2026-07-02
 
 ### Fixed

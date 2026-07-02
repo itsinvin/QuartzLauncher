@@ -3,7 +3,7 @@ use std::sync::{Arc};
 use bridge::{instance::{ContentFolder, InstanceID}, meta::MetadataRequest};
 use gpui::{prelude::*, *};
 use gpui_component::{
-    ActiveTheme, Icon, WindowExt, button::{Button, ButtonVariants}, h_flex, notification::NotificationType, skeleton::Skeleton, tab::{Tab, TabBar}, text::TextView, v_flex
+    ActiveTheme, Icon, WindowExt, button::{Button, ButtonVariants}, h_flex, notification::NotificationType, skeleton::Skeleton, tab::{Tab, TabBar}, v_flex
 };
 use schema::{content::ContentSource, loader::Loader, modrinth::{
     ModrinthProjectRequest, ModrinthProjectResult, ModrinthProjectType,
@@ -407,7 +407,14 @@ impl Render for ModrinthProjectPage {
                 0 => {
                     if let Some(body) = &project.body && !body.is_empty() {
                         v_flex()
-                            .child(TextView::markdown("project_description", body.to_string()).gap_4())
+                            .gap_2()
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .line_height(relative(1.5))
+                                    .text_color(cx.theme().foreground)
+                                    .child(body.clone()),
+                            )
                             .into_any_element()
                     } else {
                         v_flex()

@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "auth"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "chrono",
  "httparse",
@@ -614,7 +614,7 @@ dependencies = [
 
 [[package]]
 name = "backend"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "anyhow",
  "auth",
@@ -813,7 +813,7 @@ dependencies = [
 
 [[package]]
 name = "bridge"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "atomic-time",
  "atomic_enum",
@@ -1211,7 +1211,7 @@ dependencies = [
 
 [[package]]
 name = "command"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "directories",
  "junction",
@@ -2401,7 +2401,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "anyhow",
  "atomic-time",
@@ -2890,7 +2890,6 @@ dependencies = [
 [[package]]
 name = "gpui-component"
 version = "0.5.1"
-source = "git+https://github.com/longbridge/gpui-component.git?rev=2f7c7445d8c55e4af95c2a22695184ea8df35a32#2f7c7445d8c55e4af95c2a22695184ea8df35a32"
 dependencies = [
  "aho-corasick",
  "anyhow",
@@ -2933,7 +2932,6 @@ dependencies = [
 [[package]]
 name = "gpui-component-assets"
 version = "0.5.1"
-source = "git+https://github.com/longbridge/gpui-component.git?rev=2f7c7445d8c55e4af95c2a22695184ea8df35a32#2f7c7445d8c55e4af95c2a22695184ea8df35a32"
 dependencies = [
  "anyhow",
  "gpui",
@@ -2947,7 +2945,6 @@ dependencies = [
 [[package]]
 name = "gpui-component-macros"
 version = "0.5.1"
-source = "git+https://github.com/longbridge/gpui-component.git?rev=2f7c7445d8c55e4af95c2a22695184ea8df35a32#2f7c7445d8c55e4af95c2a22695184ea8df35a32"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4660,7 +4657,7 @@ dependencies = [
 
 [[package]]
 name = "nbt"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5748,7 +5745,7 @@ checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
 name = "prediction"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "serde",
  "sysinfo",
@@ -5859,7 +5856,7 @@ dependencies = [
 
 [[package]]
 name = "quartz_launcher"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "backend",
  "backtrace",
@@ -6764,7 +6761,7 @@ dependencies = [
 
 [[package]]
 name = "schema"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "chrono",
  "enum-map",
@@ -7671,7 +7668,7 @@ dependencies = [
 
 [[package]]
 name = "t"
-version = "5.2.29"
+version = "5.2.31"
 dependencies = [
  "indexmap 2.13.0",
  "toml 0.9.12+spec-1.1.0",
