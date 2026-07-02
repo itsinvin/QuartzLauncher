@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.25] - 2026-07-02
+
+### Fixed
+- Home page compile errors (imports, borrows, styling traits, and refresh button id)
+
 ## [5.2.24] - 2026-07-02
 
 ### Fixed

@@ -5,7 +5,7 @@ use bridge::{
 };
 use gpui::{prelude::FluentBuilder as _, *};
 use gpui_component::{
-    ActiveTheme as _, Icon, Sizable, WindowExt,
+    ActiveTheme as _, Disableable, Icon, Sizable, StyledExt, WindowExt,
     button::{Button, ButtonVariants},
     h_flex, v_flex,
 };
@@ -27,7 +27,7 @@ use crate::{
         instance::{InstanceAddedEvent, InstanceEntry, InstanceModifiedEvent, InstanceRemovedEvent},
     },
     icon::QuartzIcon,
-    interface_config::InterfaceConfig,
+    interface_config::{CurseforgeFavorite, InterfaceConfig, ModrinthFavorite},
     pages::page::Page,
     png_render_cache,
     root,
@@ -74,11 +74,11 @@ impl HomePage {
             _instance_modified_subscription,
             _instance_removed_subscription,
         };
-        page.load_account_skin(window, cx);
+        page.load_account_skin(cx);
         page
     }
 
-    fn load_account_skin(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    fn load_account_skin(&mut self, cx: &mut Context<Self>) {
         if self.request_account_skin.is_some() {
             return;
         }
@@ -93,7 +93,7 @@ impl HomePage {
             result: send,
         });
 
-        self.request_account_skin = Some(window.spawn(cx, async move |page, cx| {
+        self.request_account_skin = Some(cx.spawn(async move |page, cx| {
             let Ok(result) = recv.await else {
                 return;
             };
@@ -156,7 +156,7 @@ impl Page for HomePage {
             .label(t::home::refresh())
             .on_click(cx.listener(|this, _, window, cx| {
                 this.refresh_generation = this.refresh_generation.wrapping_add(1);
-                this.load_account_skin(window, cx);
+                this.load_account_skin(cx);
                 cx.notify();
             }))
     }
@@ -168,11 +168,11 @@ impl Page for HomePage {
 
 impl Render for HomePage {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = cx.theme();
         let instances = self.sorted_instances(cx);
 
         if instances.is_empty() {
             let logo_scale = animation::animated_logo_scale(window, cx);
+            let theme = cx.theme();
             let logo_size = px(72.0 * logo_scale);
             return v_flex()
                 .size_full()
@@ -230,14 +230,16 @@ impl Render for HomePage {
         let stats = self.aggregate_stats(&instances, cx);
         let last_played = instances.first().cloned();
         let showcase = instances.iter().take(4).cloned().collect::<Vec<_>>();
-        let config = InterfaceConfig::get(cx);
+        let hide_usernames = InterfaceConfig::get(cx).hide_usernames;
+        let modrinth_favorites = InterfaceConfig::get(cx).modrinth_favorites.clone();
+        let curseforge_favorites = InterfaceConfig::get(cx).curseforge_favorites.clone();
         let account_name = self
             .data
             .accounts
             .read(cx)
             .selected_account
             .as_ref()
-            .map(|account| account.username(config.hide_usernames))
+            .map(|account| account.username(hide_usernames))
             .unwrap_or_else(|| t::home::guest().into());
 
         let refresh_generation = self.refresh_generation;
@@ -249,7 +251,7 @@ impl Render for HomePage {
             .child(self.hero_section(last_played.as_ref(), &account_name, refresh_generation, window, cx))
             .child(self.stats_section(&stats, cx))
             .child(self.modpack_section(&showcase, window, cx))
-            .child(self.recommendations_section(config, window, cx))
+            .child(self.recommendations_section(&modrinth_favorites, &curseforge_favorites, window, cx))
             .into_any_element()
     }
 }
@@ -453,7 +455,7 @@ impl HomePage {
             })
     }
 
-    fn render_modpack_card(&self, instance: &InstanceEntry, index: usize, cx: &App) -> AnyElement {
+    fn render_modpack_card(&self, instance: &InstanceEntry, index: usize, cx: &mut Context<Self>) -> AnyElement {
         let theme = cx.theme();
         let loader_and_version = format!(
             "{} {}",
@@ -553,14 +555,15 @@ impl HomePage {
 
     fn recommendations_section(
         &self,
-        config: &InterfaceConfig,
+        modrinth_favorites: &[ModrinthFavorite],
+        curseforge_favorites: &[CurseforgeFavorite],
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let theme = cx.theme();
         let mut recommendations = Vec::new();
 
-        for favorite in config.modrinth_favorites.iter().take(4) {
+        for favorite in modrinth_favorites.iter().take(4) {
             recommendations.push(RecommendationCard {
                 title: favorite.title.clone().into(),
                 subtitle: favorite.author.clone().into(),
@@ -573,7 +576,7 @@ impl HomePage {
             });
         }
 
-        for favorite in config.curseforge_favorites.iter().take(4) {
+        for favorite in curseforge_favorites.iter().take(4) {
             if recommendations.len() >= 6 {
                 break;
             }
@@ -642,7 +645,7 @@ impl RecommendationCard {
             .id(("home-rec", index))
             .gap_3()
             .p_3()
-            .min_w_52()
+            .min_w_48()
             .bg(theme.muted)
             .border_1()
             .border_color(theme.border)
@@ -654,7 +657,7 @@ impl RecommendationCard {
             })
             .child({
                 if let Some(url) = self.thumbnail {
-                    gpui::img(ImageSource::Uri(SharedUri::from(url)))
+                    gpui::img(SharedUri::from(url))
                         .size_10()
                         .rounded(theme.radius)
                         .into_any_element()

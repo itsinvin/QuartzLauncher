@@ -263,7 +263,7 @@ impl Render for InstanceContentSubpage {
             .child({
                 let refresh_generation = self.refresh_generation;
                 div()
-                    .id(("refresh", u8::from(self.content_type)))
+                    .id(format!("refresh-{}", u8::from(self.content_type)))
                     .cursor_pointer()
                     .flex()
                     .flex_row()
