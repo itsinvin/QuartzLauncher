@@ -1,7 +1,7 @@
 use std::{alloc::Layout, borrow::{Borrow, Cow}, hash::Hash, ops::Deref, ptr::NonNull, sync::atomic::{AtomicUsize, Ordering}};
 
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
+use parking_lot::ReentrantMutex;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize, de::Visitor};
 
@@ -130,7 +130,7 @@ impl Drop for UniqueBytes {
     }
 }
 
-static UNIQUE: Lazy<Mutex<FxHashSet<UniqueBytesPtr>>> = Lazy::new(Default::default);
+static UNIQUE: Lazy<ReentrantMutex<FxHashSet<UniqueBytesPtr>>> = Lazy::new(Default::default);
 
 impl UniqueBytes {
     pub fn new(bytes: &[u8]) -> UniqueBytes {
