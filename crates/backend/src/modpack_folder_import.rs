@@ -157,7 +157,7 @@ impl BackendState {
         modal_action.append_log(format!("Creating instance \"{name}\"…"), &self.send);
 
         let icon_path = folder.join("icon.png");
-        let icon = std::fs::read(&icon_path).ok().map(EmbeddedOrRaw::Raw);
+        let icon = std::fs::read(&icon_path).ok().map(|bytes| EmbeddedOrRaw::Raw(bytes.into()));
 
         let Some(instance_dir) = self.create_instance_sanitized(&name, &minecraft_version, loader, icon).await else {
             modal_action.set_error_message("Unable to create instance".into());

@@ -1263,7 +1263,7 @@ fn collect_modpack_overrides_from_dir(
         let Some(relative) = path.strip_prefix(base).ok() else {
             continue;
         };
-        let Some(safe_path) = SafePath::new(relative) else {
+        let Some(safe_path) = relative.to_str().and_then(SafePath::new) else {
             continue;
         };
 

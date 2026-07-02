@@ -120,7 +120,7 @@ impl Render for ImportPage {
                      })
                 })
                 .child(Button::new("mrpack")
-                    .label(t::import::modpack_file().into())
+                    .label(t::import::modpack_file())
                     .w_full()
                     .on_click(cx.listener(|page, _, window, cx| {
                         let receiver = cx.prompt_for_paths(PathPromptOptions {
@@ -151,7 +151,7 @@ impl Render for ImportPage {
                         })
                     })))
                 .child(Button::new("modpack-folder")
-                    .label(t::import::modpack_folder().into())
+                    .label(t::import::modpack_folder())
                     .w_full()
                     .on_click(cx.listener(|page, _, window, cx| {
                         let receiver = cx.prompt_for_paths(PathPromptOptions {
