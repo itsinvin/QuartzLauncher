@@ -9,15 +9,15 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.22` |
-| **Last built** | 2026-07-02 08:19 UTC |
-| **Latest release** | [v5.2.22](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.22) |
-| **Commit** | `8240f2aa` |
+| **Version** | `5.2.29` |
+| **Last built** | 2026-07-02 10:11 UTC |
+| **Latest release** | [v5.2.29](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.29) |
+| **Commit** | `dfd0a714` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.22)
+### Recent changes (5.2.29)
 
-- CD workflow no longer fails the release when README auto-update cannot push to `main`
+- Missing `IntoElement` import in refresh icon animation helper
 
 <!-- readme:build-info:end -->
 
