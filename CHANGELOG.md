@@ -4,6 +4,12 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.35] - 2026-07-02
+
+### Fixed
+- Suppress modpack extraction log spam when launching (only runs for actual modpack files)
+- Favorite star uses gray outline when unfavorited and yellow filled star when favorited
+
 ## [5.2.34] - 2026-07-02
 
 ### Added

@@ -96,7 +96,7 @@ impl BackendState {
         let instance_content_summary = synthetic_instance_content_summary(content_summary.clone(), folder);
 
         modal_action.append_log("Downloading and installing modpack files…", &self.send);
-        self.download_modpack_children(&instance_content_summary, loader, minecraft_version, &modal_action).await;
+        self.download_modpack_children(&instance_content_summary, loader, minecraft_version, &modal_action, false).await;
 
         let affected = self.apply_modpack_content_summary_to_instance(
             &content_summary,

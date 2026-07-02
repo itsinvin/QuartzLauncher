@@ -27,6 +27,10 @@ use crate::{
     account::{BackendAccountInfo, MinecraftLoginInfo}, directories::LauncherDirectories, id_slab::IdSlab, instance::Instance, launch::Launcher, metadata::{items::{CurseforgeGetFilesMetadataItem, MinecraftVersionManifestMetadataItem}, manager::MetadataManager}, mod_metadata::ModMetadataManager, persistent::Persistent, server_list_pinger::ServerListPinger, skin_manager::SkinManager
 };
 
+fn is_modpack_content(extra: &ContentType) -> bool {
+    matches!(extra, ContentType::ModrinthModpack { .. } | ContentType::CurseforgeModpack { .. })
+}
+
 fn build_http_clients(user_agent: &str, proxy_config: &ProxyConfig, proxy_password: Option<&str>) -> (reqwest::Client, reqwest::Client) {
     let proxy_url = proxy_config.to_url(proxy_password);
 
@@ -896,8 +900,12 @@ impl BackendState {
                 continue;
             }
 
-            let content_summary = if self.download_modpack_children(summary, loader, minecraft_version, modal_action).await {
-                self.mod_metadata_manager.get_path(&summary.path)
+            let content_summary = if is_modpack_content(&summary.content_summary.extra) {
+                if self.download_modpack_children(summary, loader, minecraft_version, modal_action, true).await {
+                    self.mod_metadata_manager.get_path(&summary.path)
+                } else {
+                    summary.content_summary.clone()
+                }
             } else {
                 summary.content_summary.clone()
             };
@@ -1112,14 +1120,21 @@ impl BackendState {
         tracker.set_finished(ProgressTrackerFinishType::Normal);
     }
 
-    pub async fn download_modpack_children(self: &Arc<Self>, summary: &InstanceContentSummary, loader: Loader, minecraft_version: Ustr, modal_action: &ModalAction) -> bool {
-        modal_action.append_log("Analyzing modpack contents…", &self.send);
+    pub async fn download_modpack_children(self: &Arc<Self>, summary: &InstanceContentSummary, loader: Loader, minecraft_version: Ustr, modal_action: &ModalAction, quiet: bool) -> bool {
+        if !quiet {
+            modal_action.append_log("Analyzing modpack contents…", &self.send);
+        }
 
-        let overall = ProgressTracker::new("Modpack extraction".into(), self.send.clone());
-        modal_action.trackers.push(overall.clone());
-        overall.set_total(100);
-        overall.set_count(5);
-        overall.notify();
+        let overall = if quiet {
+            None
+        } else {
+            let overall = ProgressTracker::new("Modpack extraction".into(), self.send.clone());
+            modal_action.trackers.push(overall.clone());
+            overall.set_total(100);
+            overall.set_count(5);
+            overall.notify();
+            Some(overall)
+        };
 
         let mut curseforge_file_ids = Vec::new();
 
@@ -1132,10 +1147,14 @@ impl BackendState {
 
             (files.to_vec(), ContentSource::Manual)
         } else {
-            modal_action.append_log("Not a modpack — nothing to extract.", &self.send);
-            overall.set_count(100);
-            overall.set_finished(ProgressTrackerFinishType::Error);
-            overall.notify();
+            if !quiet {
+                modal_action.append_log("Not a modpack — nothing to extract.", &self.send);
+            }
+            if let Some(overall) = &overall {
+                overall.set_count(100);
+                overall.set_finished(ProgressTrackerFinishType::Error);
+                overall.notify();
+            }
             return false;
         };
 
@@ -1164,12 +1183,16 @@ impl BackendState {
                         content_source: fallback_source.clone(),
                         reason: ContentInstallReason::Modpack,
                     });
-                    modal_action.append_log(format!("Queued download: {path}"), &self.send);
+                    if !quiet {
+                        modal_action.append_log(format!("Queued download: {path}"), &self.send);
+                    }
                 },
                 ModpackFileSource::DownloadCurseforge { file_id } => {
                     if file.disabled_third_party_downloads {
                         blocked += 1;
-                        modal_action.append_log(format!("Skipped CurseForge file {file_id} (third-party downloads blocked)"), &self.send);
+                        if !quiet {
+                            modal_action.append_log(format!("Skipped CurseForge file {file_id} (third-party downloads blocked)"), &self.send);
+                        }
                         continue;
                     }
 
@@ -1181,33 +1204,46 @@ impl BackendState {
             }
         }
 
-        modal_action.append_log(
-            format!(
-                "{} file(s) already present, {} embedded, {} to download{}",
-                already_present,
-                embedded,
-                content_install_files.len(),
-                if blocked > 0 { format!(", {blocked} blocked") } else { String::new() },
-            ),
-            &self.send,
-        );
-        overall.set_count(15);
-        overall.notify();
+        if !quiet {
+            modal_action.append_log(
+                format!(
+                    "{} file(s) already present, {} embedded, {} to download{}",
+                    already_present,
+                    embedded,
+                    content_install_files.len(),
+                    if blocked > 0 { format!(", {blocked} blocked") } else { String::new() },
+                ),
+                &self.send,
+            );
+        }
+        if let Some(overall) = &overall {
+            overall.set_count(15);
+            overall.notify();
+        }
 
         if !curseforge_file_ids.is_empty() {
-            modal_action.append_log("Requesting download URLs from CurseForge…", &self.send);
-            let tracker = ProgressTracker::new("Requesting download URLs from CurseForge".into(), self.send.clone());
-            modal_action.trackers.push(tracker.clone());
-            tracker.set_total(1);
-            tracker.notify();
+            if !quiet {
+                modal_action.append_log("Requesting download URLs from CurseForge…", &self.send);
+            }
+            let tracker = if quiet {
+                None
+            } else {
+                let tracker = ProgressTracker::new("Requesting download URLs from CurseForge".into(), self.send.clone());
+                modal_action.trackers.push(tracker.clone());
+                tracker.set_total(1);
+                tracker.notify();
+                Some(tracker)
+            };
 
             let files_result = self.meta.fetch(&CurseforgeGetFilesMetadataItem(&CurseforgeGetFilesRequest {
                 file_ids: curseforge_file_ids,
             })).await;
 
-            tracker.set_count(1);
-            tracker.set_finished(ProgressTrackerFinishType::from_err(files_result.is_err()));
-            tracker.notify();
+            if let Some(tracker) = &tracker {
+                tracker.set_count(1);
+                tracker.set_finished(ProgressTrackerFinishType::from_err(files_result.is_err()));
+                tracker.notify();
+            }
 
             if let Ok(files) = files_result {
                 for file in files.data.iter() {
@@ -1235,7 +1271,9 @@ impl BackendState {
                     };
 
                     if let Some(download_url) = &file.download_url {
-                        modal_action.append_log(format!("Queued CurseForge download: {}", file.file_name), &self.send);
+                        if !quiet {
+                            modal_action.append_log(format!("Queued CurseForge download: {}", file.file_name), &self.send);
+                        }
                         content_install_files.push(ContentInstallFile {
                             replace_old: None,
                             path: ContentInstallPath::ModpackFilePath(ModpackFilePath::Filename(filename)),
@@ -1249,16 +1287,20 @@ impl BackendState {
                         });
                     }
                 }
-            } else {
+            } else if !quiet {
                 modal_action.append_log("Failed to resolve CurseForge download URLs.", &self.send);
             }
         }
 
-        overall.set_count(35);
-        overall.notify();
+        if let Some(overall) = &overall {
+            overall.set_count(35);
+            overall.notify();
+        }
 
         if !content_install_files.is_empty() {
-            modal_action.append_log(format!("Downloading {} file(s) into the content library…", content_install_files.len()), &self.send);
+            if !quiet {
+                modal_action.append_log(format!("Downloading {} file(s) into the content library…", content_install_files.len()), &self.send);
+            }
             let content_install = ContentInstall {
                 target: bridge::install::InstallTarget::Library,
                 loader,
@@ -1267,16 +1309,24 @@ impl BackendState {
             };
 
             self.install_content(content_install, modal_action.clone()).await;
-            modal_action.append_log("Downloads finished.", &self.send);
-            overall.set_count(100);
-            overall.set_finished(ProgressTrackerFinishType::Normal);
-            overall.notify();
+            if !quiet {
+                modal_action.append_log("Downloads finished.", &self.send);
+            }
+            if let Some(overall) = &overall {
+                overall.set_count(100);
+                overall.set_finished(ProgressTrackerFinishType::Normal);
+                overall.notify();
+            }
             true
         } else {
-            modal_action.append_log("All modpack files are already extracted.", &self.send);
-            overall.set_count(100);
-            overall.set_finished(ProgressTrackerFinishType::Normal);
-            overall.notify();
+            if !quiet {
+                modal_action.append_log("All modpack files are already extracted.", &self.send);
+            }
+            if let Some(overall) = &overall {
+                overall.set_count(100);
+                overall.set_finished(ProgressTrackerFinishType::Normal);
+                overall.notify();
+            }
             false
         }
     }

@@ -548,10 +548,10 @@ impl CurseforgeSearchPage {
 
                 let is_favorite = InterfaceConfig::get(cx).is_curseforge_favorite(hit.id);
                 let favorite_button = Button::new(("favorite", index))
-                    .icon(if is_favorite { QuartzIcon::Star } else { QuartzIcon::StarOff })
+                    .icon(if is_favorite { QuartzIcon::StarFill } else { QuartzIcon::Star })
                     .compact()
                     .ghost()
-                    .when(is_favorite, |this| this.text_color(theme.warning))
+                    .text_color(if is_favorite { theme.warning } else { theme.muted_foreground })
                     .tooltip(if is_favorite {
                         t::instance::content::favorites::remove()
                     } else {

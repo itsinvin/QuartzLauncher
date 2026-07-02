@@ -445,7 +445,7 @@ impl BackendState {
 
                 let this = self.clone();
                 tokio::spawn(async move {
-                    this.download_modpack_children(&summary, loader, minecraft_version, &modal_action).await;
+                    this.download_modpack_children(&summary, loader, minecraft_version, &modal_action, false).await;
 
                     let affected = this.apply_modpack_files_to_instance(&summary, &dot_minecraft_dir, &modal_action);
 
