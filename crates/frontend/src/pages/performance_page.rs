@@ -184,11 +184,11 @@ impl Render for PerformancePage {
     }
 }
 
-fn section_title(title: impl Into<SharedString>) -> Div {
+pub(crate) fn section_title(title: impl Into<SharedString>) -> Div {
     div().text_lg().font_semibold().child(title.into())
 }
 
-fn hardware_panel(hardware: &HardwareProfile, cx: &App) -> Div {
+pub(crate) fn hardware_panel(hardware: &HardwareProfile, cx: &App) -> Div {
     let ram_gb = hardware.total_ram_mb as f64 / 1024.0;
     v_flex().gap_2().p_3().rounded_lg().border_1().border_color(cx.theme().border)
         .child(info_row(t::tools::performance::cpu(), &hardware.cpu.brand))
@@ -245,7 +245,7 @@ fn workload_panel(page: &mut PerformancePage, cx: &mut Context<PerformancePage>)
         .child(workload_options)
 }
 
-fn prediction_panel(prediction: &PerformancePrediction, cx: &App) -> Div {
+pub(crate) fn prediction_panel(prediction: &PerformancePrediction, cx: &App) -> Div {
     let rating_label = PerformancePage::format_rating(&prediction.rating);
     let rating_color = PerformancePage::rating_color(&prediction.rating, cx);
     let bottleneck = PerformancePage::format_bottleneck(&prediction.bottleneck);

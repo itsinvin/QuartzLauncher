@@ -505,8 +505,13 @@ impl ContentListDelegate {
                         modal_action: modal_action.clone()
                     });
 
-                    crate::modals::generic::show_modal(window, cx, "Downloading children".into(),
-                        "Error downloading children".into(), modal_action);
+                    crate::modals::generic::show_modal(
+                        window,
+                        cx,
+                        t::instance::content::modpack::extracting().into(),
+                        t::instance::content::modpack::extract_error().into(),
+                        modal_action,
+                    );
                 }
             }));
         }

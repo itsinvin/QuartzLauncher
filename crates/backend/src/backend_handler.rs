@@ -417,9 +417,13 @@ impl BackendState {
                 let (summary, loader, minecraft_version) = {
                     let mut instance_state = self.instance_state.write();
                     let Some(instance) = instance_state.instances.get_mut(id) else {
+                        modal_action.set_error_message("Unable to find instance".into());
+                        modal_action.set_finished();
                         return;
                     };
                     let Some((summary, _)) = instance.try_get_content(content_id) else {
+                        modal_action.set_error_message("Unable to find modpack".into());
+                        modal_action.set_finished();
                         return;
                     };
                     let summary = summary.clone();
@@ -427,13 +431,21 @@ impl BackendState {
                     (summary, configuration.loader, configuration.minecraft_version)
                 };
 
-                self.download_modpack_children(&summary, loader, minecraft_version, &modal_action).await;
+                let this = self.clone();
+                let id = *id;
+                tokio::spawn(async move {
+                    this.download_modpack_children(&summary, loader, minecraft_version, &modal_action).await;
 
-                if let Some(instance) = self.instance_state.write().instances.get_mut(id) {
-                    let mut changes = FolderChanges::no_changes();
-                    changes.dirty_path(summary.path);
-                    instance.mark_content_dirty(self, ContentFolder::Mods, changes, true);
-                }
+                    if let Some(instance) = this.instance_state.write().instances.get_mut(id) {
+                        let mut changes = FolderChanges::no_changes();
+                        changes.dirty_path(summary.path);
+                        instance.mark_content_dirty(this.as_ref(), ContentFolder::Mods, changes, true);
+                    }
+
+                    modal_action.append_log("Modpack extraction complete.", &this.send);
+                    modal_action.set_finished();
+                    this.send.send(MessageToFrontend::Refresh);
+                });
             },
             MessageToBackend::DownloadAllMetadata => {
                 self.download_all_metadata().await;

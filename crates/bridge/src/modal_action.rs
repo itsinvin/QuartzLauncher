@@ -45,6 +45,8 @@ pub struct ModalActionInner {
     pub error: RwLock<Option<Arc<str>>>,
     pub visit_url: RwLock<Option<ModalActionVisitUrl>>,
     pub trackers: ProgressTrackers,
+    pub logs: RwLock<Vec<Arc<str>>>,
+    pub refresh_serial: AtomicOptionSerial,
     pub request_cancel: CancellationToken,
 }
 
@@ -76,6 +78,11 @@ impl ModalActionInner {
     pub fn has_requested_cancel(&self) -> bool {
         self.request_cancel.is_cancelled()
     }
+
+    pub fn append_log(&self, line: impl Into<Arc<str>>, sender: &FrontendHandle) {
+        self.logs.write().push(line.into());
+        sender.send_with_serial(MessageToFrontend::Refresh, &self.refresh_serial);
+    }
 }
 
 impl std::fmt::Debug for ModalActionInner {
@@ -85,6 +92,7 @@ impl std::fmt::Debug for ModalActionInner {
             .field("error", &self.error)
             .field("visit_url", &self.visit_url)
             .field("trackers", &self.trackers)
+            .field("logs_len", &self.logs.read().len())
             .field("request_cancel", &self.request_cancel)
             .finish()
     }

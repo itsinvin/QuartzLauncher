@@ -1053,6 +1053,14 @@ impl BackendState {
     }
 
     pub async fn download_modpack_children(self: &Arc<Self>, summary: &InstanceContentSummary, loader: Loader, minecraft_version: Ustr, modal_action: &ModalAction) -> bool {
+        modal_action.append_log("Analyzing modpack contents…", &self.send);
+
+        let overall = ProgressTracker::new("Modpack extraction".into(), self.send.clone());
+        modal_action.trackers.push(overall.clone());
+        overall.set_total(100);
+        overall.set_count(5);
+        overall.notify();
+
         let mut curseforge_file_ids = Vec::new();
 
         let (files, fallback_source) = if let ContentType::ModrinthModpack { files, .. } = &summary.content_summary.extra {
@@ -1064,18 +1072,27 @@ impl BackendState {
 
             (files.to_vec(), ContentSource::Manual)
         } else {
+            modal_action.append_log("Not a modpack — nothing to extract.", &self.send);
+            overall.set_count(100);
+            overall.set_finished(ProgressTrackerFinishType::Error);
+            overall.notify();
             return false;
         };
 
+        let mut already_present = 0usize;
+        let mut embedded = 0usize;
+        let mut blocked = 0usize;
         let mut content_install_files = Vec::new();
 
         for file in files.iter() {
             if let Some(summary) = &file.summary && summary.hash == file.hash {
+                already_present += 1;
                 continue;
             }
 
             match &file.source {
                 ModpackFileSource::DownloadUrl { url, size } => {
+                    let path = file.path.as_str();
                     content_install_files.push(ContentInstallFile {
                         replace_old: None,
                         path: ContentInstallPath::ModpackFilePath(file.path.clone()),
@@ -1087,19 +1104,38 @@ impl BackendState {
                         content_source: fallback_source.clone(),
                         reason: ContentInstallReason::Modpack,
                     });
+                    modal_action.append_log(format!("Queued download: {path}"), &self.send);
                 },
                 ModpackFileSource::DownloadCurseforge { file_id } => {
                     if file.disabled_third_party_downloads {
+                        blocked += 1;
+                        modal_action.append_log(format!("Skipped CurseForge file {file_id} (third-party downloads blocked)"), &self.send);
                         continue;
                     }
 
                     curseforge_file_ids.push(*file_id);
                 },
-                ModpackFileSource::Builtin { .. } => {},
+                ModpackFileSource::Builtin { .. } => {
+                    embedded += 1;
+                },
             }
         }
 
+        modal_action.append_log(
+            format!(
+                "{} file(s) already present, {} embedded, {} to download{}",
+                already_present,
+                embedded,
+                content_install_files.len(),
+                if blocked > 0 { format!(", {blocked} blocked") } else { String::new() },
+            ),
+            &self.send,
+        );
+        overall.set_count(15);
+        overall.notify();
+
         if !curseforge_file_ids.is_empty() {
+            modal_action.append_log("Requesting download URLs from CurseForge…", &self.send);
             let tracker = ProgressTracker::new("Requesting download URLs from CurseForge".into(), self.send.clone());
             modal_action.trackers.push(tracker.clone());
             tracker.set_total(1);
@@ -1139,6 +1175,7 @@ impl BackendState {
                     };
 
                     if let Some(download_url) = &file.download_url {
+                        modal_action.append_log(format!("Queued CurseForge download: {}", file.file_name), &self.send);
                         content_install_files.push(ContentInstallFile {
                             replace_old: None,
                             path: ContentInstallPath::ModpackFilePath(ModpackFilePath::Filename(filename)),
@@ -1152,10 +1189,16 @@ impl BackendState {
                         });
                     }
                 }
+            } else {
+                modal_action.append_log("Failed to resolve CurseForge download URLs.", &self.send);
             }
         }
 
+        overall.set_count(35);
+        overall.notify();
+
         if !content_install_files.is_empty() {
+            modal_action.append_log(format!("Downloading {} file(s) into the content library…", content_install_files.len()), &self.send);
             let content_install = ContentInstall {
                 target: bridge::install::InstallTarget::Library,
                 loader,
@@ -1164,8 +1207,16 @@ impl BackendState {
             };
 
             self.install_content(content_install, modal_action.clone()).await;
+            modal_action.append_log("Downloads finished.", &self.send);
+            overall.set_count(100);
+            overall.set_finished(ProgressTrackerFinishType::Normal);
+            overall.notify();
             true
         } else {
+            modal_action.append_log("All modpack files are already extracted.", &self.send);
+            overall.set_count(100);
+            overall.set_finished(ProgressTrackerFinishType::Normal);
+            overall.notify();
             false
         }
     }

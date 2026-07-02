@@ -10,7 +10,7 @@ use gpui_component::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    entity::{DataEntities, instance::InstanceEntry}, icon::QuartzIcon, interface_config::InterfaceConfig, pages::{instance::{content_subpage::InstanceContentSubpage, logs_subpage::InstanceLogsSubpage, quickplay_subpage::InstanceQuickplaySubpage, settings_subpage::InstanceSettingsSubpage}, page::Page}, root,
+    entity::{DataEntities, instance::InstanceEntry}, icon::QuartzIcon, interface_config::InterfaceConfig, pages::{instance::{content_subpage::InstanceContentSubpage, logs_subpage::InstanceLogsSubpage, performance_subpage::InstancePerformanceSubpage, quickplay_subpage::InstanceQuickplaySubpage, settings_subpage::InstanceSettingsSubpage}, page::Page}, root,
 };
 
 use super::content_subpage::ContentType;
@@ -157,7 +157,8 @@ impl Render for InstancePage {
             InstanceSubpage::Mods(_) => 2,
             InstanceSubpage::ResourcePacks(_) => 3,
             InstanceSubpage::Shaders(_) => 4,
-            InstanceSubpage::Settings(_) => if show_shader_tab { 5 } else { 4 },
+            InstanceSubpage::Performance(_) => if show_shader_tab { 5 } else { 4 },
+            InstanceSubpage::Settings(_) => if show_shader_tab { 6 } else { 5 },
         };
 
         v_flex()
@@ -174,6 +175,7 @@ impl Render for InstancePage {
                     .when(show_shader_tab, |this| {
                         this.child(Tab::new().label(t::instance::content::shaders()))
                     })
+                    .child(Tab::new().label(t::instance::performance::title()))
                     .child(Tab::new().label(t::settings::title()))
                     .on_click(cx.listener(move |_, index, _, cx| {
                         let page_type = match *index {
@@ -184,9 +186,14 @@ impl Render for InstancePage {
                             4 => if show_shader_tab {
                                 InstanceSubpageType::Shaders
                             } else {
+                                InstanceSubpageType::Performance
+                            },
+                            5 => if show_shader_tab {
+                                InstanceSubpageType::Performance
+                            } else {
                                 InstanceSubpageType::Settings
                             },
-                            5 => {
+                            6 => {
                                 if show_shader_tab {
                                     InstanceSubpageType::Settings
                                 } else {
@@ -213,6 +220,7 @@ pub enum InstanceSubpageType {
     Mods,
     ResourcePacks,
     Shaders,
+    Performance,
     Settings,
 }
 
@@ -241,6 +249,9 @@ impl InstanceSubpageType {
             InstanceSubpageType::Shaders => InstanceSubpage::Shaders(cx.new(|cx| {
                 InstanceContentSubpage::new(instance, ContentType::Shaders, backend_handle, window, cx)
             })),
+            InstanceSubpageType::Performance => InstanceSubpage::Performance(cx.new(|cx| {
+                InstancePerformanceSubpage::new(instance, window, cx)
+            })),
             InstanceSubpageType::Settings => InstanceSubpage::Settings(cx.new(|cx| {
                 InstanceSettingsSubpage::new(instance, data, backend_handle, window, cx)
             })),
@@ -255,6 +266,7 @@ pub enum InstanceSubpage {
     Mods(Entity<InstanceContentSubpage>),
     ResourcePacks(Entity<InstanceContentSubpage>),
     Shaders(Entity<InstanceContentSubpage>),
+    Performance(Entity<InstancePerformanceSubpage>),
     Settings(Entity<InstanceSettingsSubpage>),
 }
 
@@ -266,6 +278,7 @@ impl InstanceSubpage {
             InstanceSubpage::Mods(_) => InstanceSubpageType::Mods,
             InstanceSubpage::ResourcePacks(_) => InstanceSubpageType::ResourcePacks,
             InstanceSubpage::Shaders(_) => InstanceSubpageType::Shaders,
+            InstanceSubpage::Performance(_) => InstanceSubpageType::Performance,
             InstanceSubpage::Settings(_) => InstanceSubpageType::Settings,
         }
     }
@@ -277,6 +290,7 @@ impl InstanceSubpage {
             Self::Mods(entity) => entity.into_any_element(),
             Self::ResourcePacks(entity) => entity.into_any_element(),
             Self::Shaders(entity) => entity.into_any_element(),
+            Self::Performance(entity) => entity.into_any_element(),
             Self::Settings(entity) => entity.into_any_element(),
         }
     }

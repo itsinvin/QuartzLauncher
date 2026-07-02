@@ -1393,6 +1393,51 @@ en = "Error extracting modpack contents"
 de = "Fehler beim Extrahieren des Modpakets"
 hu = "Hiba a modcsomag kibontásakor"
 sv = "Fel vid extrahering av modpack"
+[instance.performance.title]
+en = "Performance"
+de = "Leistung"
+hu = "Teljesítmény"
+sv = "Prestanda"
+[instance.performance.subtitle]
+en = "Estimated FPS and bottlenecks for this instance based on your hardware and installed content."
+de = "Geschätzte FPS und Engpässe für diese Instanz basierend auf Ihrer Hardware und installierten Inhalten."
+hu = "Becsült FPS és szűk keresztmetszetek ehhez az instanciához a hardver és a telepített tartalom alapján."
+sv = "Uppskattade FPS och flaskhalsar för denna instans baserat på din hårdvara och installerat innehåll."
+[instance.performance.workload]
+en = "Instance workload"
+de = "Instanz-Workload"
+hu = "Instancia terhelés"
+sv = "Instansens arbetsbelastning"
+[instance.performance.loader]
+en = "Loader"
+de = "Loader"
+hu = "Loader"
+sv = "Loader"
+[instance.performance.no_shaders]
+en = "No shaders"
+de = "Keine Shader"
+hu = "Nincsenek shaderek"
+sv = "Inga shaders"
+[instance.performance.optimization_detected]
+en = "Optimization mods detected"
+de = "Optimierungs-Mods erkannt"
+hu = "Optimalizáló modok észlelve"
+sv = "Optimeringsmods upptäckta"
+[instance.performance.no_optimization_mods]
+en = "No optimization mods"
+de = "Keine Optimierungs-Mods"
+hu = "Nincsenek optimalizáló modok"
+sv = "Inga optimeringsmods"
+[instance.performance.heavy_modpack]
+en = "Heavy modpack"
+de = "Schweres Modpack"
+hu = "Nehéz modcsomag"
+sv = "Tungt modpack"
+[instance.performance.light_medium_load]
+en = "Light–medium load"
+de = "Leichte bis mittlere Last"
+hu = "Könnyű–közepes terhelés"
+sv = "Lätt till medel belastning"
 [instance.content.favorites.only]
 en = "Favorites only"
 de = "Nur Favoriten"

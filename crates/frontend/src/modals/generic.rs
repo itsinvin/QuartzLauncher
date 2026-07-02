@@ -244,6 +244,29 @@ pub fn show_modal(
 
         let progress = v_flex().gap_2().children(progress_entries);
 
+        let logs = modal_action.logs.read();
+        let progress = if logs.is_empty() {
+            progress
+        } else {
+            progress.child(
+                div()
+                    .max_h(px(180.0))
+                    .overflow_y_scrollbar()
+                    .p_2()
+                    .rounded_lg()
+                    .border_1()
+                    .border_color(cx.theme().border)
+                    .bg(cx.theme().sidebar)
+                    .child(
+                        v_flex()
+                            .gap_0p5()
+                            .children(logs.iter().map(|line| {
+                                div().text_sm().text_color(cx.theme().muted_foreground).child(SharedString::from(line.clone()))
+                            })),
+                    ),
+            )
+        };
+
         let request_cancel = modal_action.request_cancel.clone();
         let modal = modal.title(title.clone()).close_button(false).child(progress).opacity(modal_opacity);
         if is_finishing {
