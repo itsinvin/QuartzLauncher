@@ -269,6 +269,7 @@ impl Render for SkinsPage {
                                     let skin = skin.clone();
                                     cx.listener(move |page, _, _, cx| {
                                         if let Some(skin) = &skin && skin != &page.selected_skin {
+                                            InterfaceConfig::record_recent_skin(&page.selected_skin, cx);
                                             page.data.backend_handle.send(MessageToBackend::SetAccountSkin {
                                                 account: uuid,
                                                 skin: page.selected_skin.clone(),

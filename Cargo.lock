@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "auth"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "chrono",
  "httparse",
@@ -614,7 +614,7 @@ dependencies = [
 
 [[package]]
 name = "backend"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "anyhow",
  "auth",
@@ -813,7 +813,7 @@ dependencies = [
 
 [[package]]
 name = "bridge"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "atomic-time",
  "atomic_enum",
@@ -1211,7 +1211,7 @@ dependencies = [
 
 [[package]]
 name = "command"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "directories",
  "junction",
@@ -2401,7 +2401,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "anyhow",
  "atomic-time",
@@ -4657,7 +4657,7 @@ dependencies = [
 
 [[package]]
 name = "nbt"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -5745,7 +5745,7 @@ checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
 name = "prediction"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "serde",
  "sysinfo",
@@ -5856,7 +5856,7 @@ dependencies = [
 
 [[package]]
 name = "quartz_launcher"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "backend",
  "backtrace",
@@ -6761,7 +6761,7 @@ dependencies = [
 
 [[package]]
 name = "schema"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "chrono",
  "enum-map",
@@ -7668,7 +7668,7 @@ dependencies = [
 
 [[package]]
 name = "t"
-version = "5.2.33"
+version = "5.2.34"
 dependencies = [
  "indexmap 2.13.0",
  "toml 0.9.12+spec-1.1.0",

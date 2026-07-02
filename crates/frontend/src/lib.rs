@@ -20,6 +20,7 @@ use crate::{
     }, interface_config::InterfaceConfig, processor::Processor, root::{LauncherRoot, LauncherRootGlobal}
 };
 
+pub mod home_recommendations;
 pub mod component;
 pub mod data_asset_loader;
 pub mod entity;

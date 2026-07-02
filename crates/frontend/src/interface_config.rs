@@ -1,9 +1,9 @@
-use std::{cmp::Ordering, io::Write, path::Path, sync::Arc, time::Duration};
+use std::{cmp::Ordering, hash::{DefaultHasher, Hasher}, io::Write, path::Path, sync::Arc, time::Duration};
 
 use bridge::instance::InstanceContentSummary;
 use gpui::{App, SharedString, Task};
 use rand::RngCore;
-use schema::{curseforge::{CurseforgeClassId, CurseforgeHit}, modrinth::{ModrinthHit, ModrinthProjectType}};
+use schema::{curseforge::{CurseforgeClassId, CurseforgeHit}, modrinth::{ModrinthHit, ModrinthProjectType}, unique_bytes::UniqueBytes};
 use serde::{Deserialize, Serialize};
 
 use crate::{pages::instance::instance_page::InstanceSubpageType, ui::PageType};
@@ -84,6 +84,21 @@ pub struct InterfaceConfig {
     pub curseforge_favorites_only: bool,
     #[serde(default, deserialize_with = "schema::try_deserialize")]
     pub last_seen_release_version: Option<String>,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub recent_skins: Vec<RecentSkinEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RecentSkinEntry {
+    pub fingerprint: String,
+    #[serde(default)]
+    pub last_used_unix_ms: u64,
+}
+
+pub fn skin_fingerprint(skin: &UniqueBytes) -> String {
+    let mut hasher = DefaultHasher::new();
+    hasher.write(skin);
+    format!("{:016x}", hasher.finish())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -264,6 +279,7 @@ impl Default for InterfaceConfig {
             modrinth_favorites_only: Default::default(),
             curseforge_favorites_only: Default::default(),
             last_seen_release_version: None,
+            recent_skins: Default::default(),
         }
     }
 }
@@ -346,6 +362,26 @@ impl InterfaceConfig {
 
     pub fn is_modrinth_favorite(&self, project_id: &str) -> bool {
         self.modrinth_favorites.iter().any(|f| f.project_id == project_id)
+    }
+
+    pub fn record_recent_skin(skin: &UniqueBytes, cx: &mut App) {
+        let fingerprint = skin_fingerprint(skin);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+
+        let config = Self::get_mut(cx);
+        config.recent_skins.retain(|entry| entry.fingerprint != fingerprint);
+        config.recent_skins.insert(
+            0,
+            RecentSkinEntry {
+                fingerprint,
+                last_used_unix_ms: now,
+            },
+        );
+        const MAX_RECENT_SKINS: usize = 12;
+        config.recent_skins.truncate(MAX_RECENT_SKINS);
     }
 
     pub fn toggle_modrinth_favorite(&mut self, hit: &ModrinthHit) -> bool {
