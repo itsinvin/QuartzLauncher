@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.13] - 2026-07-02
+
+### Fixed
+- Compile error comparing favorite project IDs (`String` vs `Arc<str>`)
+
 ## [5.2.12] - 2026-07-02
 
 ### Added

@@ -346,7 +346,7 @@ impl InterfaceConfig {
     }
 
     pub fn toggle_modrinth_favorite(&mut self, hit: &ModrinthHit) -> bool {
-        if let Some(index) = self.modrinth_favorites.iter().position(|f| f.project_id == hit.project_id) {
+        if let Some(index) = self.modrinth_favorites.iter().position(|f| f.project_id == hit.project_id.as_ref()) {
             self.modrinth_favorites.remove(index);
             false
         } else {
