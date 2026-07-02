@@ -4,6 +4,16 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.12] - 2026-07-02
+
+### Added
+- **Extract** button on imported modpacks — download all pack contents without expanding the file list
+- **Favorite mods** on Modrinth and CurseForge browse pages, with **Favorites only** sidebar filter
+- Minecraft font applied globally with increased line height for readability
+
+### Changed
+- Modernized mod browse cards and instance content page layout (panels, shadows, hover accents)
+
 ## [5.2.11] - 2026-07-01
 
 ### Changed

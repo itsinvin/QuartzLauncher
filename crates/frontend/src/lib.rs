@@ -60,9 +60,9 @@ impl AssetSource for Assets {
 }
 
 #[cfg(windows)]
-pub const MAIN_FONT: &'static str = "Inter 24pt 24pt";
+pub const MAIN_FONT: &'static str = "minecraft";
 #[cfg(not(windows))]
-pub const MAIN_FONT: &'static str = "Inter 24pt";
+pub const MAIN_FONT: &'static str = "minecraft";
 
 pub const MINECRAFT_FONT: &'static str = "minecraft";
 

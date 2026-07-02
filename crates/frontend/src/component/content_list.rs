@@ -293,23 +293,56 @@ impl ContentListDelegate {
                 }
             });
 
+            let extract_control = Button::new(("extract", element_id))
+                .label(t::instance::content::modpack::extract())
+                .icon(QuartzIcon::Archive)
+                .compact()
+                .small()
+                .success()
+                .tooltip(t::instance::content::modpack::extracting())
+                .on_click({
+                    let backend_handle = self.backend_handle.clone();
+                    let id = self.id;
+                    let content_id = summary.id;
+                    move |_, window, cx| {
+                        let modal_action = ModalAction::default();
+                        backend_handle.send(MessageToBackend::DownloadContentChildren {
+                            id,
+                            content_id,
+                            modal_action: modal_action.clone(),
+                        });
+                        crate::modals::generic::show_modal(
+                            window,
+                            cx,
+                            t::instance::content::modpack::extracting().into(),
+                            t::instance::content::modpack::extract_error().into(),
+                            modal_action,
+                        );
+                    }
+                });
+
             v_flex()
                 .items_center()
                 .gap_1()
                 .child(toggle_control)
+                .child(extract_control)
                 .child(expand_control).into_any_element()
         } else {
             toggle_control.into_any_element()
         };
 
         let mut item_content = h_flex()
-            .gap_1()
+            .gap_2()
+            .px_2()
+            .py_1()
+            .rounded(cx.theme().radius)
             .child(controls)
             .child(icon.size_16().min_w_16().min_h_16().grayscale(!summary.enabled))
             .when(!summary.enabled, |this| this.line_through())
             .child(desc1)
             .when_some(desc2, |div, desc2| div.child(desc2))
             .border_1()
+            .border_color(cx.theme().border)
             .when(selected, |content| content.border_color(cx.theme().selection).bg(cx.theme().selection.alpha(0.2)));
 
         if let Some(update_button) = update_button {

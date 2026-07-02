@@ -3,7 +3,7 @@ use std::{cmp::Ordering, io::Write, path::Path, sync::Arc, time::Duration};
 use bridge::instance::InstanceContentSummary;
 use gpui::{App, SharedString, Task};
 use rand::RngCore;
-use schema::{curseforge::CurseforgeClassId, modrinth::ModrinthProjectType};
+use schema::{curseforge::{CurseforgeClassId, CurseforgeHit}, modrinth::{ModrinthHit, ModrinthProjectType}};
 use serde::{Deserialize, Serialize};
 
 use crate::{pages::instance::instance_page::InstanceSubpageType, ui::PageType};
@@ -74,6 +74,99 @@ pub struct InterfaceConfig {
     pub collapse_capes_in_skins_page: bool,
     #[serde(default = "schema::default_true", deserialize_with = "schema::try_deserialize")]
     pub skin_list_show_3d: bool,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub modrinth_favorites: Vec<ModrinthFavorite>,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub curseforge_favorites: Vec<CurseforgeFavorite>,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub modrinth_favorites_only: bool,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub curseforge_favorites_only: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ModrinthFavorite {
+    pub project_id: String,
+    pub title: String,
+    pub author: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub icon_url: Option<String>,
+    pub downloads: u64,
+    pub project_type: ModrinthProjectType,
+}
+
+impl ModrinthFavorite {
+    pub fn from_hit(hit: &ModrinthHit) -> Self {
+        Self {
+            project_id: hit.project_id.to_string(),
+            title: hit.title.as_deref().unwrap_or("").to_string(),
+            author: hit.author.to_string(),
+            description: hit.description.as_deref().unwrap_or("").to_string(),
+            icon_url: hit.icon_url.as_deref().map(str::to_string),
+            downloads: hit.downloads,
+            project_type: hit.project_type,
+        }
+    }
+
+    pub fn to_hit(&self) -> ModrinthHit {
+        ModrinthHit {
+            title: Some(Arc::from(self.title.as_str())),
+            description: Some(Arc::from(self.description.as_str())),
+            client_side: None,
+            server_side: None,
+            project_type: self.project_type,
+            downloads: self.downloads,
+            icon_url: self.icon_url.as_deref().map(Arc::from),
+            project_id: Arc::from(self.project_id.as_str()),
+            author: Arc::from(self.author.as_str()),
+            display_categories: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CurseforgeFavorite {
+    pub id: u32,
+    pub name: String,
+    pub summary: String,
+    #[serde(default)]
+    pub thumbnail_url: Option<String>,
+    pub download_count: u64,
+    pub class_id: u32,
+}
+
+impl CurseforgeFavorite {
+    pub fn from_hit(hit: &CurseforgeHit) -> Self {
+        Self {
+            id: hit.id,
+            name: hit.name.to_string(),
+            summary: hit.summary.to_string(),
+            thumbnail_url: hit.logo.as_ref().map(|l| l.thumbnail_url.to_string()),
+            download_count: hit.download_count,
+            class_id: hit.class_id.unwrap_or(0),
+        }
+    }
+
+    pub fn to_hit(&self) -> CurseforgeHit {
+        use schema::curseforge::{CurseforgeModAsset, FileIndex};
+        CurseforgeHit {
+            id: self.id,
+            game_id: 432,
+            name: Arc::from(self.name.as_str()),
+            slug: Arc::from(""),
+            summary: Arc::from(self.summary.as_str()),
+            download_count: self.download_count,
+            class_id: Some(self.class_id),
+            logo: self.thumbnail_url.as_deref().map(|url| CurseforgeModAsset {
+                thumbnail_url: Arc::from(url),
+            }),
+            authors: Arc::new([]),
+            categories: Arc::new([]),
+            latest_files_indexes: Arc::new([] as [FileIndex; 0]),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, strum::EnumIter)]
@@ -164,6 +257,10 @@ impl Default for InterfaceConfig {
             instance_subpage: Default::default(),
             collapse_capes_in_skins_page: false,
             skin_list_show_3d: true,
+            modrinth_favorites: Default::default(),
+            curseforge_favorites: Default::default(),
+            modrinth_favorites_only: Default::default(),
+            curseforge_favorites_only: Default::default(),
         }
     }
 }
@@ -241,6 +338,34 @@ impl InterfaceConfig {
             &mut holder.config
         } else {
             &mut cx.global_mut::<InterfaceConfigHolder>().config
+        }
+    }
+
+    pub fn is_modrinth_favorite(&self, project_id: &str) -> bool {
+        self.modrinth_favorites.iter().any(|f| f.project_id == project_id)
+    }
+
+    pub fn toggle_modrinth_favorite(&mut self, hit: &ModrinthHit) -> bool {
+        if let Some(index) = self.modrinth_favorites.iter().position(|f| f.project_id == hit.project_id) {
+            self.modrinth_favorites.remove(index);
+            false
+        } else {
+            self.modrinth_favorites.push(ModrinthFavorite::from_hit(hit));
+            true
+        }
+    }
+
+    pub fn is_curseforge_favorite(&self, mod_id: u32) -> bool {
+        self.curseforge_favorites.iter().any(|f| f.id == mod_id)
+    }
+
+    pub fn toggle_curseforge_favorite(&mut self, hit: &CurseforgeHit) -> bool {
+        if let Some(index) = self.curseforge_favorites.iter().position(|f| f.id == hit.id) {
+            self.curseforge_favorites.remove(index);
+            false
+        } else {
+            self.curseforge_favorites.push(CurseforgeFavorite::from_hit(hit));
+            true
         }
     }
 }

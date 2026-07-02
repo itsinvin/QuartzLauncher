@@ -242,9 +242,12 @@ impl Render for InstanceContentSubpage {
 
         let header = h_flex()
             .gap_3()
-            .mb_1()
-            .ml_1()
-            .child(div().text_lg().child(self.content_type.title()))
+            .p_3()
+            .rounded_lg()
+            .border_1()
+            .border_color(theme.border)
+            .bg(theme.sidebar)
+            .child(div().text_xl().line_height(relative(1.35)).child(self.content_type.title()))
             .child(Button::new("update").label(t::instance::content::update::check::label(false)).success().compact().small().on_click({
                 let backend_handle = self.backend_handle.clone();
                 let instance_id = self.instance;
@@ -312,6 +315,12 @@ impl Render for InstanceContentSubpage {
             .block_mouse_except_scroll()
             .gap_3()
             .items_center()
+            .px_3()
+            .py_1()
+            .rounded_lg()
+            .border_1()
+            .border_color(theme.border)
+            .bg(theme.sidebar)
             .child(div().child(Select::new(&self.sort_dropdown).small().title_prefix("Sort: ")))
             .child(h_flex().gap_1()
                 .child(div().text_sm().child("Enabled first"))
@@ -340,10 +349,10 @@ impl Render for InstanceContentSubpage {
                 )
             )
             .absolute()
-            .top(px(4.0))
+            .top(px(8.0))
             .right(px(12.0));
 
-        v_flex().p_4().size_full()
+        v_flex().p_4().gap_3().size_full()
             .child(header)
             .child(div()
                 .id("content-list-area")
@@ -356,8 +365,9 @@ impl Render for InstanceContentSubpage {
                 }))
                 .size_full()
                 .border_1()
-                .rounded(theme.radius)
+                .rounded_lg()
                 .border_color(theme.border)
+                .bg(theme.sidebar)
                 .child(self.content_list.clone())
                 .child(filter_bar_controls)
                 .on_click({

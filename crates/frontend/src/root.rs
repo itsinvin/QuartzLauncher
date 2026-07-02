@@ -80,6 +80,8 @@ impl Render for LauncherRoot {
         v_flex()
             .size_full()
             .font_family(MAIN_FONT)
+            .text_size(rems(1.0))
+            .line_height(rems(1.45))
             .child(self.ui.clone())
             .children(sheet_layer)
             .children(dialog_layer)

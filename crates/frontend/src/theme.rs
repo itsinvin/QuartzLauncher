@@ -60,6 +60,7 @@ pub fn apply_quartz_branding(theme: &mut Theme) {
 
     theme.radius = px(8.0);
     theme.radius_lg = px(12.0);
+    theme.font_family = gpui::SharedString::new_static(crate::MINECRAFT_FONT);
 }
 
 pub fn apply_saved_theme(cx: &mut gpui::App) {

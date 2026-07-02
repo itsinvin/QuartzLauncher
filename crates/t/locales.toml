@@ -1378,6 +1378,36 @@ en = "Modpacks"
 de = "Modpakete"
 hu = "Modcsomagok"
 sv = "Modpack"
+[instance.content.modpack.extract]
+en = "Extract"
+de = "Extrahieren"
+hu = "Kibontás"
+sv = "Extrahera"
+[instance.content.modpack.extracting]
+en = "Extracting modpack contents"
+de = "Modpaket-Inhalte werden extrahiert"
+hu = "Modcsomag tartalmának kibontása"
+sv = "Extraherar modpack-innehåll"
+[instance.content.modpack.extract_error]
+en = "Error extracting modpack contents"
+de = "Fehler beim Extrahieren des Modpakets"
+hu = "Hiba a modcsomag kibontásakor"
+sv = "Fel vid extrahering av modpack"
+[instance.content.favorites.only]
+en = "Favorites only"
+de = "Nur Favoriten"
+hu = "Csak kedvencek"
+sv = "Endast favoriter"
+[instance.content.favorites.add]
+en = "Add to favorites"
+de = "Zu Favoriten hinzufügen"
+hu = "Kedvencekhez adás"
+sv = "Lägg till i favoriter"
+[instance.content.favorites.remove]
+en = "Remove from favorites"
+de = "Aus Favoriten entfernen"
+hu = "Eltávolítás a kedvencekből"
+sv = "Ta bort från favoriter"
 [instance.content.resourcepacks]
 en = "Resourcepacks"
 de = "Ressourcenpakete"

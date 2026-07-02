@@ -4,7 +4,7 @@ use bridge::{install::{ContentDownload, ContentInstall, ContentInstallFile, Inst
 use enumset::EnumSet;
 use gpui::{prelude::*, *};
 use gpui_component::{
-    ActiveTheme, Icon, Selectable, WindowExt, button::{Button, ButtonGroup, ButtonVariant, ButtonVariants}, checkbox::Checkbox, h_flex, input::{Input, InputEvent, InputState}, notification::NotificationType, scroll::{ScrollableElement, Scrollbar}, skeleton::Skeleton, v_flex
+    ActiveTheme, Icon, Selectable, StyledExt, WindowExt, button::{Button, ButtonGroup, ButtonVariant, ButtonVariants}, checkbox::Checkbox, h_flex, input::{Input, InputEvent, InputState}, notification::NotificationType, scroll::{ScrollableElement, Scrollbar}, skeleton::Skeleton, v_flex
 };
 use rustc_hash::FxHashMap;
 use schema::{content::{ContentInstallReason, ContentSource}, loader::Loader, modrinth::{
@@ -245,6 +245,13 @@ impl ModrinthSearchPage {
 
         let search: Arc<str> = Arc::from(search);
         self.last_search = search.clone();
+
+        if InterfaceConfig::get(cx).modrinth_favorites_only {
+            self.apply_favorites_as_hits(cx);
+            cx.notify();
+            return;
+        }
+
         self.reload(cx);
     }
 
@@ -264,7 +271,12 @@ impl ModrinthSearchPage {
             };
             state.set_placeholder(placeholder, window, cx)
         });
-        self.reload(cx);
+        if InterfaceConfig::get(cx).modrinth_favorites_only {
+            self.apply_favorites_as_hits(cx);
+            cx.notify();
+        } else {
+            self.reload(cx);
+        }
     }
 
     fn set_filter_loaders(&mut self, loaders: EnumSet<Loader>, _window: &mut Window, cx: &mut Context<Self>) {
@@ -289,6 +301,41 @@ impl ModrinthSearchPage {
         }
         self.sort_option = sort_option;
         self.reload(cx);
+    }
+
+    fn apply_favorites_as_hits(&mut self, cx: &App) {
+        let config = InterfaceConfig::get(cx);
+        let search = self.last_search.to_ascii_lowercase();
+        self.hits = config
+            .modrinth_favorites
+            .iter()
+            .filter(|favorite| favorite.project_type == config.modrinth_page_project_type)
+            .filter(|favorite| {
+                search.is_empty()
+                    || favorite.title.to_ascii_lowercase().contains(&search)
+                    || favorite.author.to_ascii_lowercase().contains(&search)
+                    || favorite.description.to_ascii_lowercase().contains(&search)
+            })
+            .map(|favorite| {
+                let mut hit = favorite.to_hit();
+                if let Some(description) = hit.description.as_mut() {
+                    *description = Arc::from(description.replace('\n', " "));
+                }
+                hit
+            })
+            .collect();
+        self.total_hits = self.hits.len();
+    }
+
+    fn set_favorites_only(&mut self, value: bool, cx: &mut Context<Self>) {
+        InterfaceConfig::get_mut(cx).modrinth_favorites_only = value;
+        if value {
+            self.apply_favorites_as_hits(cx);
+            self.loading = None;
+        } else {
+            self.reload(cx);
+        }
+        cx.notify();
     }
 
     fn reload(&mut self, cx: &mut Context<Self>) {
@@ -319,6 +366,13 @@ impl ModrinthSearchPage {
         if self.loading.is_some() {
             return;
         }
+
+        if InterfaceConfig::get(cx).modrinth_favorites_only {
+            self.apply_favorites_as_hits(cx);
+            cx.notify();
+            return;
+        }
+
         self.pending_reload = false;
         self.search_error = None;
 
@@ -552,6 +606,26 @@ impl ModrinthSearchPage {
 
                 let primary_action = self.get_primary_action(&hit.project_id, cx);
 
+                let is_favorite = InterfaceConfig::get(cx).is_modrinth_favorite(&hit.project_id);
+                let favorite_button = Button::new(("favorite", index))
+                    .icon(if is_favorite { QuartzIcon::Star } else { QuartzIcon::StarOff })
+                    .compact()
+                    .ghost()
+                    .tooltip(if is_favorite {
+                        t::instance::content::favorites::remove()
+                    } else {
+                        t::instance::content::favorites::add()
+                    })
+                    .on_click(cx.listener(move |page, _, _, cx| {
+                        if let Some(hit) = page.hits.get(index).cloned() {
+                            InterfaceConfig::get_mut(cx).toggle_modrinth_favorite(&hit);
+                            if InterfaceConfig::get(cx).modrinth_favorites_only {
+                                page.apply_favorites_as_hits(cx);
+                            }
+                            cx.notify();
+                        }
+                    }));
+
                 let install_button = Button::new(("install", index))
                     .label(primary_action.text())
                     .icon(primary_action.icon())
@@ -583,18 +657,20 @@ impl ModrinthSearchPage {
                 let item = h_flex()
                     .rounded_lg()
                     .px_4()
-                    .py_2()
+                    .py_3()
                     .gap_4()
-                    .h_32()
-                    .bg(theme.background)
-                    .border_color(theme.border)
+                    .min_h(px(120.0))
+                    .bg(if is_favorite { theme.muted } else { theme.background })
+                    .border_color(if is_favorite { theme.accent.alpha(0.45) } else { theme.border })
                     .border_1()
+                    .shadow_sm()
+                    .hover(|style| style.border_color(theme.accent))
                     .size_full()
                     .child(image.rounded_lg().size_16().min_w_16().min_h_16())
                     .child(
                         v_flex()
                             .id(("open-project", index))
-                            .h(px(104.0))
+                            .min_h(px(96.0))
                             .flex_grow()
                             .gap_1()
                             .overflow_hidden()
@@ -612,6 +688,7 @@ impl ModrinthSearchPage {
                                     .items_end()
                                     .line_clamp(1)
                                     .text_lg()
+                                    .line_height(relative(1.35))
                                     .child(name)
                                     .child(author_line),
                             )
@@ -619,7 +696,7 @@ impl ModrinthSearchPage {
                                 div()
                                     .text_decoration_0()
                                     .flex_auto()
-                                    .line_height(px(20.0))
+                                    .line_height(relative(1.4))
                                     .line_clamp(2)
                                     .child(description),
                             )
@@ -632,7 +709,7 @@ impl ModrinthSearchPage {
                                     .children(std::iter::once(environment).chain(categories)),
                             ),
                     )
-                    .child(v_flex().items_end().child(downloads).child(install_button));
+                    .child(v_flex().items_end().gap_2().child(favorite_button).child(downloads).child(install_button));
 
                 div().pl_3().pt_3().child(item)
             })
@@ -790,7 +867,7 @@ impl Page for ModrinthSearchPage {
 
 impl Render for ModrinthSearchPage {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let can_load_more = self.total_hits > self.hits.len();
+        let can_load_more = !InterfaceConfig::get(cx).modrinth_favorites_only && self.total_hits > self.hits.len();
         let scroll_handle = self.scroll_handle.clone();
 
         let item_count = self.hits.len() + if can_load_more || self.search_error.is_some() { 1 } else { 0 };
@@ -847,10 +924,21 @@ impl Render for ModrinthSearchPage {
             .p_3()
             .pl_0()
             .child(top_bar)
-            .child(div().size_full().rounded_lg().border_1().border_color(theme.border).child(list));
+            .child(div().size_full().rounded_lg().border_1().border_color(theme.border).bg(theme.sidebar).child(list));
 
         let config = InterfaceConfig::get(cx);
         let filter_project_type = config.modrinth_page_project_type;
+        let favorites_only = config.modrinth_favorites_only;
+
+        let favorites_toggle = Button::new("favorites-only")
+            .label(t::instance::content::favorites::only())
+            .icon(QuartzIcon::Star)
+            .outline()
+            .selected(favorites_only)
+            .on_click(cx.listener(|page, _, _, cx| {
+                let next = !InterfaceConfig::get(cx).modrinth_favorites_only;
+                page.set_favorites_only(next, cx);
+            }));
 
         let type_button_group = ButtonGroup::new("type")
             .layout(Axis::Vertical)
@@ -991,6 +1079,7 @@ impl Render for ModrinthSearchPage {
             .p_3()
             .gap_3()
             .child(type_button_group)
+            .child(favorites_toggle)
             .when_some(loader_button_group, |this, group| this.child(group))
             .when_some(filter_version_toggle, |this, button| this.child(button))
             .child(category)
