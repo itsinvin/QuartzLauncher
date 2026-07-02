@@ -1,4 +1,4 @@
-use std::{alloc::Layout, borrow::{Borrow, Cow}, hash::Hash, ops::Deref, ptr::NonNull, sync::atomic::{AtomicUsize, Ordering}};
+use std::{alloc::Layout, borrow::{Borrow, Cow}, cell::RefCell, hash::Hash, ops::Deref, ptr::NonNull, sync::atomic::{AtomicUsize, Ordering}};
 
 use once_cell::sync::Lazy;
 use parking_lot::ReentrantMutex;
@@ -120,7 +120,7 @@ impl Drop for UniqueBytes {
 
         std::sync::atomic::fence(Ordering::Acquire);
 
-        let removed = UNIQUE.lock().remove(&self.0);
+        let removed = UNIQUE.lock().borrow_mut().remove(&self.0);
         debug_assert!(removed);
 
         unsafe {
@@ -130,11 +130,12 @@ impl Drop for UniqueBytes {
     }
 }
 
-static UNIQUE: Lazy<ReentrantMutex<FxHashSet<UniqueBytesPtr>>> = Lazy::new(Default::default);
+static UNIQUE: Lazy<ReentrantMutex<RefCell<FxHashSet<UniqueBytesPtr>>>> = Lazy::new(Default::default);
 
 impl UniqueBytes {
     pub fn new(bytes: &[u8]) -> UniqueBytes {
-        let mut set = UNIQUE.lock();
+        let set = UNIQUE.lock();
+        let mut set = set.borrow_mut();
         if let Some(ptr) = set.get(bytes) {
             return Self::clone_ptr_increase_refcnt(ptr);
         }

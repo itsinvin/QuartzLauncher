@@ -261,6 +261,9 @@ impl BackendState {
     async fn start(self, recv: BackendReceiver, watcher_rx: Receiver<notify_debouncer_full::DebounceEventResult>) {
         log::info!("Starting backend");
 
+        crate::discord_rpc::init(&self.directories.root_launcher_dir);
+        crate::discord_rpc::set_idle();
+
         tokio::task::spawn(crate::update::check_for_updates(self.redirecting_http_client.clone(), self.send.clone()));
 
         let client = self.redirecting_http_client.clone();
@@ -479,6 +482,7 @@ impl BackendState {
         self.mod_metadata_manager.write_changes();
 
         let mut any_process_alive = false;
+        let mut playing_rpc: Option<(String, String, String)> = None;
 
         let mut instance_state = self.instance_state.write();
         for instance in instance_state.instances.iter_mut() {
@@ -543,9 +547,25 @@ impl BackendState {
 
             self.restore_mods_folder_if_stopped(instance);
             any_process_alive |= !instance.processes.is_empty() || !instance.closing_processes.is_empty();
+
+            if playing_rpc.is_none() && !instance.processes.is_empty() {
+                let configuration = instance.configuration.get();
+                playing_rpc = Some((
+                    instance.name.to_string(),
+                    configuration.loader.pretty_name().to_string(),
+                    configuration.minecraft_version.to_string(),
+                ));
+            }
         }
 
         self.quit_coordinator.set_can_quit(!any_process_alive);
+
+        match playing_rpc {
+            Some((name, loader, version)) => {
+                crate::discord_rpc::set_playing(&name, &loader, &version);
+            }
+            None => crate::discord_rpc::set_idle(),
+        }
     }
 
     pub async fn login(
@@ -1431,6 +1451,12 @@ impl BackendState {
         }
         if !sanitize_filename::is_sanitized_with_options(&*name, sanitize_filename::OptionsForCheck { windows: true, ..Default::default() }) {
             self.send.send_warning(format!("Unable to create instance, name is invalid: {}", name));
+            return None;
+        }
+        if name.contains('!') {
+            self.send.send_warning(
+                "Unable to create instance: names cannot contain '!' because it breaks Java mod loaders.".to_string(),
+            );
             return None;
         }
         if self.instance_state.read().instances.iter().any(|i| i.name == name) {

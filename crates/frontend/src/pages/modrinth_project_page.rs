@@ -405,7 +405,8 @@ impl Render for ModrinthProjectPage {
 
             let body_el: AnyElement = match active_tab {
                 0 => {
-                    if let Some(body) = &project.body && !body.is_empty() {
+                    if let Some(body) = project.body.clone().filter(|body| !body.is_empty()) {
+                        let body_text = SharedString::from(body.to_string());
                         v_flex()
                             .gap_2()
                             .child(
@@ -413,7 +414,7 @@ impl Render for ModrinthProjectPage {
                                     .text_sm()
                                     .line_height(relative(1.5))
                                     .text_color(cx.theme().foreground)
-                                    .child(body.clone()),
+                                    .child(body_text),
                             )
                             .into_any_element()
                     } else {

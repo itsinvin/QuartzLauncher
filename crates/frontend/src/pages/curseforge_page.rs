@@ -551,6 +551,7 @@ impl CurseforgeSearchPage {
                     .icon(if is_favorite { QuartzIcon::Star } else { QuartzIcon::StarOff })
                     .compact()
                     .ghost()
+                    .when(is_favorite, |this| this.text_color(theme.warning))
                     .tooltip(if is_favorite {
                         t::instance::content::favorites::remove()
                     } else {

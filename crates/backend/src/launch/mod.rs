@@ -63,6 +63,8 @@ pub enum LaunchError {
     },
     #[error("Invalid instance name: {0}")]
     InvalidInstanceName(&'static str),
+    #[error("Invalid game directory path: {0}")]
+    InvalidGamePath(Cow<'static, str>),
     #[error("Error running forge post processor")]
     ForgePostProcessorError,
     #[error("Cancelled by user")]
@@ -101,6 +103,12 @@ impl Launcher {
     ) -> Result<PandoraChild, LaunchError> {
         log::info!("Launching {:?}", dot_minecraft_path);
 
+        if crate::path_breaks_java_classpath(&dot_minecraft_path) {
+            return Err(LaunchError::InvalidGamePath(Cow::Borrowed(
+                "This instance path contains '!' which breaks Java and Fabric. Rename the instance folder (remove the exclamation mark) and try again.",
+            )));
+        }
+
         launch_tracker.set_total(6);
 
         log::debug!("Creating launch version");
@@ -117,6 +125,10 @@ impl Launcher {
         launch_tracker.notify();
 
         let _ = std::fs::create_dir_all(&dot_minecraft_path);
+
+        if instance_info.loader == Loader::Fabric {
+            let _ = std::fs::create_dir_all(dot_minecraft_path.join(".fabric").join("remappedJars"));
+        }
 
         let launch_rule_context = LaunchRuleContext {
             is_demo_user: false,

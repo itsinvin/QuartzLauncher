@@ -4,6 +4,18 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.32] - 2026-07-02
+
+### Added
+- Discord Rich Presence (shows launcher status and active instance)
+- Home page player skin preview with auto-rotate (controls removed)
+- Yellow star icon when a mod is favorited on Modrinth/CurseForge
+
+### Fixed
+- Block instance names/paths containing `!` (fixes Fabric `client-intermediary.jar.tmp` launch failures)
+- `UniqueBytes` reentrant lock compile error on CI
+- Modrinth project descriptions render as plain text (avoids tree-sitter deadlocks)
+
 ## [5.2.31] - 2026-07-02
 
 ### Fixed

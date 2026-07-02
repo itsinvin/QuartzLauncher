@@ -18,6 +18,7 @@ pub struct PlayerModelWidget {
     variant: SkinVariant,
     last_drag: Option<Point<Pixels>>,
     last_render: Instant,
+    show_controls: bool,
 }
 
 impl PlayerModelWidget {
@@ -50,7 +51,16 @@ impl PlayerModelWidget {
             variant,
             last_drag: None,
             last_render: Instant::now(),
+            show_controls: true,
         }
+    }
+
+    pub fn new_preview(cx: &mut Context<Self>, skin: UniqueBytes) -> Self {
+        let mut widget = Self::new(cx, skin);
+        widget.show_controls = false;
+        widget.animating_yaw = true;
+        widget.last_render = Instant::now();
+        widget
     }
 
     pub fn set_skin(&mut self, cx: &mut App, skin: UniqueBytes, variant: SkinVariant) {
@@ -225,7 +235,7 @@ impl Render for PlayerModelWidget {
                     }
                 }))
             )
-            .child(v_flex().p_4().w_full()
+            .when(self.show_controls, |this| this.child(v_flex().p_4().w_full()
                 .child(h_flex()
                     .w_full()
                     .gap_2()
@@ -283,6 +293,6 @@ impl Render for PlayerModelWidget {
                                 cx.notify();
                             }))))
                     .child(Slider::new(&self.animation_slider_state)))
-            )
+            ))
     }
 }

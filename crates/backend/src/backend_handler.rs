@@ -2126,6 +2126,11 @@ impl BackendState {
                     instance.processes.push(child.process);
                     instance.update_session();
                     self.quit_coordinator.set_can_quit(false);
+                    crate::discord_rpc::set_playing(
+                        &instance.name,
+                        instance.configuration.get().loader.pretty_name(),
+                        instance.configuration.get().minecraft_version.as_str(),
+                    );
                 }
             },
             Err(ref err) => {

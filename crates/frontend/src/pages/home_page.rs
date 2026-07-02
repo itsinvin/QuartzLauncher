@@ -53,7 +53,7 @@ pub struct HomePage {
 
 impl HomePage {
     pub fn new(data: &DataEntities, _window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let player_model = cx.new(|cx| PlayerModelWidget::new(cx, DEFAULT_SKIN.clone()));
+        let player_model = cx.new(|cx| PlayerModelWidget::new_preview(cx, DEFAULT_SKIN.clone()));
         let instances = data.instances.clone();
 
         let _instance_added_subscription =
@@ -293,13 +293,15 @@ impl HomePage {
                     )
                     .child(
                         div()
-                            .w_40()
-                            .h_48()
+                            .w_48()
+                            .h_56()
                             .rounded(theme.radius_lg)
                             .border_1()
                             .border_color(theme.border)
                             .bg(theme.muted)
-                            .overflow_hidden()
+                            .flex()
+                            .items_center()
+                            .justify_center()
                             .child(self.player_model.clone()),
                     ),
             )

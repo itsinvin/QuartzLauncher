@@ -16,6 +16,7 @@ mod backend_handler;
 mod account;
 mod arcfactory;
 mod directories;
+mod discord_rpc;
 mod export;
 mod install_content;
 mod instance;
@@ -48,6 +49,13 @@ pub(crate) fn is_single_component_path(path: &Path) -> bool {
     }
 
     components.count() == 1
+}
+
+/// `!` in filesystem paths breaks Java `jar:` URLs and causes Fabric remapping to fail.
+pub(crate) fn path_breaks_java_classpath(path: &Path) -> bool {
+    path.components().any(|component| {
+        component.as_os_str().to_string_lossy().contains('!')
+    })
 }
 
 pub(crate) fn check_sha1_hash(path: &Path, expected_hash: [u8; 20]) -> std::io::Result<bool> {

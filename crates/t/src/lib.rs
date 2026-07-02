@@ -139,6 +139,7 @@ pub mod common {
             "error" => Some(error()),
             "icon" => Some(icon()),
             "latest" => Some(latest()),
+            "launcher_title" => Some(launcher_title()),
             "max" => Some(max()),
             "min" => Some(min()),
             "ok" => Some(ok()),
@@ -205,6 +206,14 @@ pub mod common {
             2 => "Legújabb",
             3 => "Nyast",
             _ => "Latest",
+        }
+    }
+    pub fn launcher_title() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Quartz Launcher",
+            2 => "Quartz Launcher",
+            3 => "Quartz Launcher",
+            _ => "Quartz Launcher",
         }
     }
     #[rustfmt::skip]
@@ -431,7 +440,195 @@ pub mod file_system {
     }
 }
 #[rustfmt::skip]
+pub mod home {
+    pub fn get(key: &str) -> Option<&'static str> {
+        match key {
+            "browse_mods" => Some(browse_mods()),
+            "guest" => Some(guest()),
+            "no_modpacks" => Some(no_modpacks()),
+            "no_recent" => Some(no_recent()),
+            "no_recommendations" => Some(no_recommendations()),
+            "play_now" => Some(play_now()),
+            "quick_play" => Some(quick_play()),
+            "recommended_mods" => Some(recommended_mods()),
+            "refresh" => Some(refresh()),
+            "refresh_hint" => Some(refresh_hint()),
+            "stat_instances" => Some(stat_instances()),
+            "stat_mods" => Some(stat_mods()),
+            "subtitle" => Some(subtitle()),
+            "title" => Some(title()),
+            "view_all" => Some(view_all()),
+            "welcome_subtitle" => Some(welcome_subtitle()),
+            "welcome_title" => Some(welcome_title()),
+            "your_modpacks" => Some(your_modpacks()),
+            _ => None,
+        }
+    }
+    pub fn browse_mods() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modrinth durchsuchen",
+            2 => "Modrinth böngészése",
+            3 => "Bläddra på Modrinth",
+            _ => "Browse Modrinth",
+        }
+    }
+    pub fn greeting(name: &str) -> String {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => format!("Willkommen zurück, {name}!"),
+            2 => format!("Üdv újra, {name}!"),
+            3 => format!("Välkommen tillbaka, {name}!"),
+            _ => format!("Welcome back, {name}!"),
+        }
+    }
+    pub fn guest() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Spieler",
+            2 => "Játékos",
+            3 => "Spelare",
+            _ => "Player",
+        }
+    }
+    pub fn no_modpacks() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Erstelle oder importiere ein Modpack, um es hier zu sehen.",
+            2 => "Hozz létre vagy importálj modpackot a megjelenítéshez.",
+            3 => "Skapa eller importera ett modpack för att se det här.",
+            _ => "Create or import a modpack to see it here.",
+        }
+    }
+    pub fn no_recent() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Starte eine Instanz, um hier den Schnellstart zu sehen.",
+            2 => "Indíts egy példányt a gyors indítás megjelenítéséhez.",
+            3 => "Starta en instans för att se snabbstart här.",
+            _ => "Play an instance to see quick launch here.",
+        }
+    }
+    pub fn no_recommendations() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Markiere Mods auf Modrinth oder CurseForge, um Empfehlungen zu sehen.",
+            2 => "Csillagozd meg a modokat a Modrinth/CurseForge oldalakon az ajánlásokhoz.",
+            3 => "Stjärnmarkera mods på Modrinth eller CurseForge för rekommendationer här.",
+            _ => "Star mods on Modrinth or CurseForge to see recommendations here.",
+        }
+    }
+    pub fn play_now() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Jetzt spielen",
+            2 => "Játék most",
+            3 => "Spela nu",
+            _ => "Play now",
+        }
+    }
+    pub fn quick_play() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Weiterspielen",
+            2 => "Folytatás",
+            3 => "Fortsätt spela",
+            _ => "Continue playing",
+        }
+    }
+    pub fn recommended_mods() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Empfohlene Mods",
+            2 => "Ajánlott modok",
+            3 => "Rekommenderade mods",
+            _ => "Recommended mods",
+        }
+    }
+    pub fn refresh() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Aktualisieren",
+            2 => "Frissítés",
+            3 => "Uppdatera",
+            _ => "Refresh",
+        }
+    }
+    pub fn refresh_hint() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Statistiken aktualisieren sich beim Spielen und Installieren.",
+            2 => "A statisztikák frissülnek játék és telepítés közben.",
+            3 => "Statistik uppdateras när du spelar och installerar innehåll.",
+            _ => "Stats update as you play and install content.",
+        }
+    }
+    pub fn stat_instances() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpacks",
+            2 => "Modpackok",
+            3 => "Modpacks",
+            _ => "Modpacks",
+        }
+    }
+    pub fn stat_mods() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Installierte Mods",
+            2 => "Telepített modok",
+            3 => "Installerade mods",
+            _ => "Installed mods",
+        }
+    }
+    pub fn subtitle() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Steig wieder in Minecraft ein oder durchstöbere deine Modpack-Bibliothek.",
+            2 => "Ugorj vissza a Minecraftba, vagy böngészd a modpackjeidet.",
+            3 => "Hoppa tillbaka in i Minecraft eller bläddra i ditt modpack-bibliotek.",
+            _ => "Jump back into Minecraft or browse your modpack library.",
+        }
+    }
+    pub fn title() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Start",
+            2 => "Kezdőlap",
+            3 => "Hem",
+            _ => "Home",
+        }
+    }
+    pub fn view_all() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Alle anzeigen",
+            2 => "Összes megtekintése",
+            3 => "Visa alla",
+            _ => "View all",
+        }
+    }
+    pub fn welcome_subtitle() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Erstelle dein erstes Modpack oder importiere eines, um loszulegen.",
+            2 => "Hozd létre az első modpackod, vagy importálj egyet a kezdéshez.",
+            3 => "Skapa ditt första modpack eller importera ett för att komma igång.",
+            _ => "Create your first modpack or import one to get started.",
+        }
+    }
+    pub fn welcome_title() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Willkommen bei Quartz Launcher",
+            2 => "Üdv a Quartz Launcherben",
+            3 => "Välkommen till Quartz Launcher",
+            _ => "Welcome to Quartz Launcher",
+        }
+    }
+    pub fn your_modpacks() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Deine Modpacks",
+            2 => "Modpackjaid",
+            3 => "Dina modpacks",
+            _ => "Your modpacks",
+        }
+    }
+}
+#[rustfmt::skip]
 pub mod import {
+    pub fn get(key: &str) -> Option<&'static str> {
+        match key {
+            "modpack_file" => Some(modpack_file()),
+            "modpack_folder" => Some(modpack_folder()),
+            "select_modpack_file" => Some(select_modpack_file()),
+            "select_modpack_folder" => Some(select_modpack_folder()),
+            "title" => Some(title()),
+            _ => None,
+        }
+    }
     pub fn disabled(launcher: &str) -> String {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
             1 => format!("Bitte wähle eine der Optionen aus, um es von {launcher} zu importieren"),
@@ -446,6 +643,46 @@ pub mod import {
             2 => format!("A fentiek közül kiválasztottak importálása innen: {launcher}"),
             3 => format!("Importera det valda ovanstående från {launcher}"),
             _ => format!("Import the above selected from {launcher}"),
+        }
+    }
+    pub fn modpack_file() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modrinth-Paket importieren (.mrpack)",
+            2 => "Modrinth csomag importálása (.mrpack)",
+            3 => "Importera Modrinth-paket (.mrpack)",
+            _ => "Import Modrinth Pack (.mrpack)",
+        }
+    }
+    pub fn modpack_folder() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpack-Ordner importieren",
+            2 => "Modpack mappa importálása",
+            3 => "Importera modpack-mapp",
+            _ => "Import Modpack Folder",
+        }
+    }
+    pub fn select_modpack_file() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modrinth-Paket auswählen",
+            2 => "Modrinth csomag kiválasztása",
+            3 => "Välj Modrinth-paket",
+            _ => "Select Modrinth Pack",
+        }
+    }
+    pub fn select_modpack_folder() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpack-Ordner auswählen",
+            2 => "Modpack mappa kiválasztása",
+            3 => "Välj modpack-mapp",
+            _ => "Select Modpack Folder",
+        }
+    }
+    pub fn title() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Importieren",
+            2 => "Importálás",
+            3 => "Importera",
+            _ => "Import",
         }
     }
 }
@@ -466,12 +703,14 @@ pub mod instance {
             "kill" => Some(kill()),
             "kill_instance" => Some(kill_instance()),
             "label" => Some(label()),
+            "last_played_just_now" => Some(last_played_just_now()),
             "loader" => Some(loader()),
             "mc_version" => Some(mc_version()),
             "memory" => Some(memory()),
             "modloader" => Some(modloader()),
             "name" => Some(name()),
             "name_placeholder" => Some(name_placeholder()),
+            "never_played" => Some(never_played()),
             "new" => Some(new()),
             "none_selected" => Some(none_selected()),
             "open_folder" => Some(open_folder()),
@@ -479,6 +718,9 @@ pub mod instance {
             "play" => Some(play()),
             "quickplay" => Some(quickplay()),
             "recent" => Some(recent()),
+            "running" => Some(running()),
+            "search_no_results" => Some(search_no_results()),
+            "search_placeholder" => Some(search_placeholder()),
             "select_glfw_lib" => Some(select_glfw_lib()),
             "select_icon" => Some(select_icon()),
             "select_jvm_binary" => Some(select_jvm_binary()),
@@ -510,6 +752,7 @@ pub mod instance {
                 "no_description" => Some(no_description()),
                 "no_gallery" => Some(no_gallery()),
                 "open_page" => Some(open_page()),
+                "refresh" => Some(refresh()),
                 "requesting_from_modrinth_error" => Some(requesting_from_modrinth_error()),
                 "resourcepacks" => Some(resourcepacks()),
                 "shaders" => Some(shaders()),
@@ -576,6 +819,41 @@ pub mod instance {
                 2 => "Hiba a projekt betöltésekor",
                 3 => "Fel vid laddning av projekt",
                 _ => "Error loading project",
+            }
+        }
+        #[rustfmt::skip]
+        pub mod favorites {
+            pub fn get(key: &str) -> Option<&'static str> {
+                match key {
+                    "add" => Some(add()),
+                    "only" => Some(only()),
+                    "remove" => Some(remove()),
+                    _ => None,
+                }
+            }
+            pub fn add() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Zu Favoriten hinzufügen",
+                    2 => "Kedvencekhez adás",
+                    3 => "Lägg till i favoriter",
+                    _ => "Add to favorites",
+                }
+            }
+            pub fn only() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Nur Favoriten",
+                    2 => "Csak kedvencek",
+                    3 => "Endast favoriter",
+                    _ => "Favorites only",
+                }
+            }
+            pub fn remove() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Aus Favoriten entfernen",
+                    2 => "Eltávolítás a kedvencekből",
+                    3 => "Ta bort från favoriter",
+                    _ => "Remove from favorites",
+                }
             }
         }
         pub fn filename_prefix() -> &'static str {
@@ -966,6 +1244,41 @@ pub mod instance {
                 }
             }
         }
+        #[rustfmt::skip]
+        pub mod modpack {
+            pub fn get(key: &str) -> Option<&'static str> {
+                match key {
+                    "extract" => Some(extract()),
+                    "extract_error" => Some(extract_error()),
+                    "extracting" => Some(extracting()),
+                    _ => None,
+                }
+            }
+            pub fn extract() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Extrahieren",
+                    2 => "Kibontás",
+                    3 => "Extrahera",
+                    _ => "Extract",
+                }
+            }
+            pub fn extract_error() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Fehler beim Extrahieren des Modpakets",
+                    2 => "Hiba a modcsomag kibontásakor",
+                    3 => "Fel vid extrahering av modpack",
+                    _ => "Error extracting modpack contents",
+                }
+            }
+            pub fn extracting() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Modpaket-Inhalte werden extrahiert",
+                    2 => "Modcsomag tartalmának kibontása",
+                    3 => "Extraherar modpack-innehåll",
+                    _ => "Extracting modpack contents",
+                }
+            }
+        }
         pub fn modpacks() -> &'static str {
             match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
                 1 => "Modpakete",
@@ -1004,6 +1317,14 @@ pub mod instance {
                 2 => "Oldal megnyitása",
                 3 => "Öppna sida",
                 _ => "Open Page",
+            }
+        }
+        pub fn refresh() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Aktualisieren",
+                2 => "Frissítés",
+                3 => "Uppdatera",
+                _ => "Refresh",
             }
         }
         pub fn requesting_from_modrinth_error() -> &'static str {
@@ -1140,6 +1461,8 @@ pub mod instance {
                     "error" => Some(error()),
                     "installed_manually" => Some(installed_manually()),
                     "label" => Some(label()),
+                    "link_curseforge" => Some(link_curseforge()),
+                    "link_modrinth" => Some(link_modrinth()),
                     _ => None,
                 }
             }
@@ -1271,6 +1594,22 @@ pub mod instance {
                     2 => "Frissítés",
                     3 => "Uppdatera",
                     _ => "Update",
+                }
+            }
+            pub fn link_curseforge() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Mit CurseForge-Projekt verknüpfen für Updates",
+                    2 => "CurseForge projekthez kapcsolás a frissítésekhez",
+                    3 => "Länka till CurseForge-projekt för uppdateringar",
+                    _ => "Link to CurseForge project for updates",
+                }
+            }
+            pub fn link_modrinth() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Mit Modrinth-Projekt verknüpfen für Updates",
+                    2 => "Modrinth projekthez kapcsolás a frissítésekhez",
+                    3 => "Länka till Modrinth-projekt för uppdateringar",
+                    _ => "Link to Modrinth project for updates",
                 }
             }
         }
@@ -1713,6 +2052,38 @@ pub mod instance {
             _ => "Instance",
         }
     }
+    pub fn last_played_days_ago(days: i64) -> String {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => format!("vor {days} Tg."),
+            2 => format!("{days} napja"),
+            3 => format!("{days} dagar sedan"),
+            _ => format!("{days}d ago"),
+        }
+    }
+    pub fn last_played_hours_ago(hours: i64) -> String {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => format!("vor {hours} Std."),
+            2 => format!("{hours} órája"),
+            3 => format!("{hours} tim sedan"),
+            _ => format!("{hours}h ago"),
+        }
+    }
+    pub fn last_played_just_now() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Gerade gespielt",
+            2 => "Most játszott",
+            3 => "Spelade precis",
+            _ => "Played just now",
+        }
+    }
+    pub fn last_played_minutes_ago(minutes: i64) -> String {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => format!("vor {minutes} Min."),
+            2 => format!("{minutes} perce"),
+            3 => format!("{minutes} min sedan"),
+            _ => format!("{minutes}m ago"),
+        }
+    }
     #[rustfmt::skip]
     pub mod linux {
         pub fn get(key: &str) -> Option<&'static str> {
@@ -1936,6 +2307,14 @@ pub mod instance {
             _ => "<instance name>",
         }
     }
+    pub fn never_played() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Nie gespielt",
+            2 => "Még nem játszott",
+            3 => "Aldrig spelat",
+            _ => "Never played",
+        }
+    }
     pub fn new() -> &'static str {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
             1 => "Neue Instanz",
@@ -1968,6 +2347,95 @@ pub mod instance {
             _ => "Use System OpenAL",
         }
     }
+    #[rustfmt::skip]
+    pub mod performance {
+        pub fn get(key: &str) -> Option<&'static str> {
+            match key {
+                "heavy_modpack" => Some(heavy_modpack()),
+                "light_medium_load" => Some(light_medium_load()),
+                "loader" => Some(loader()),
+                "no_optimization_mods" => Some(no_optimization_mods()),
+                "no_shaders" => Some(no_shaders()),
+                "optimization_detected" => Some(optimization_detected()),
+                "subtitle" => Some(subtitle()),
+                "title" => Some(title()),
+                "workload" => Some(workload()),
+                _ => None,
+            }
+        }
+        pub fn heavy_modpack() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Schweres Modpack",
+                2 => "Nehéz modcsomag",
+                3 => "Tungt modpack",
+                _ => "Heavy modpack",
+            }
+        }
+        pub fn light_medium_load() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Leichte bis mittlere Last",
+                2 => "Könnyű–közepes terhelés",
+                3 => "Lätt till medel belastning",
+                _ => "Light–medium load",
+            }
+        }
+        pub fn loader() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Loader",
+                2 => "Loader",
+                3 => "Loader",
+                _ => "Loader",
+            }
+        }
+        pub fn no_optimization_mods() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Keine Optimierungs-Mods",
+                2 => "Nincsenek optimalizáló modok",
+                3 => "Inga optimeringsmods",
+                _ => "No optimization mods",
+            }
+        }
+        pub fn no_shaders() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Keine Shader",
+                2 => "Nincsenek shaderek",
+                3 => "Inga shaders",
+                _ => "No shaders",
+            }
+        }
+        pub fn optimization_detected() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Optimierungs-Mods erkannt",
+                2 => "Optimalizáló modok észlelve",
+                3 => "Optimeringsmods upptäckta",
+                _ => "Optimization mods detected",
+            }
+        }
+        pub fn subtitle() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Geschätzte FPS und Engpässe für diese Instanz basierend auf Ihrer Hardware und installierten Inhalten.",
+                2 => "Becsült FPS és szűk keresztmetszetek ehhez az instanciához a hardver és a telepített tartalom alapján.",
+                3 => "Uppskattade FPS och flaskhalsar för denna instans baserat på din hårdvara och installerat innehåll.",
+                _ => "Estimated FPS and bottlenecks for this instance based on your hardware and installed content.",
+            }
+        }
+        pub fn title() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Leistung",
+                2 => "Teljesítmény",
+                3 => "Prestanda",
+                _ => "Performance",
+            }
+        }
+        pub fn workload() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Instanz-Workload",
+                2 => "Instancia terhelés",
+                3 => "Instansens arbetsbelastning",
+                _ => "Instance workload",
+            }
+        }
+    }
     pub fn play() -> &'static str {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
             1 => "Spiel",
@@ -1990,6 +2458,30 @@ pub mod instance {
             2 => "Legutóbbi példányok",
             3 => "Senaste instanserna",
             _ => "Recent Instances",
+        }
+    }
+    pub fn running() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Läuft",
+            2 => "Fut",
+            3 => "Körs",
+            _ => "Running",
+        }
+    }
+    pub fn search_no_results() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Keine Instanzen entsprechen deiner Suche",
+            2 => "Nincs a keresésnek megfelelő példány",
+            3 => "Inga instanser matchar din sökning",
+            _ => "No instances match your search",
+        }
+    }
+    pub fn search_placeholder() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Instanzen suchen...",
+            2 => "Példányok keresése...",
+            3 => "Sök instanser...",
+            _ => "Search instances...",
         }
     }
     #[rustfmt::skip]
@@ -2522,6 +3014,32 @@ pub mod instance {
             2 => "Nézet",
             3 => "Visa",
             _ => "View",
+        }
+    }
+    #[rustfmt::skip]
+    pub mod welcome {
+        pub fn get(key: &str) -> Option<&'static str> {
+            match key {
+                "subtitle" => Some(subtitle()),
+                "title" => Some(title()),
+                _ => None,
+            }
+        }
+        pub fn subtitle() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Erstelle deine erste Instanz, um modded Minecraft zu spielen. Durchsuche Modrinth und CurseForge, synchronisiere Welten und schätze die Performance — alles in einem Launcher.",
+                2 => "Hozd létre az első példányodat a modolt Minecraft játékhoz. Böngéssz a Modrinth és CurseForge oldalakon, szinkronizálj világokat és becsüld meg a teljesítményt — egy launcherben.",
+                3 => "Skapa din första instans för att spela moddad Minecraft. Bläddra på Modrinth och CurseForge, synka världar och uppskatta prestanda — allt i en launcher.",
+                _ => "Create your first instance to start playing modded Minecraft. Browse Modrinth and CurseForge, sync saves between worlds, and estimate performance — all in one launcher.",
+            }
+        }
+        pub fn title() -> &'static str {
+            match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                1 => "Willkommen bei Quartz",
+                2 => "Üdv a Quartzban",
+                3 => "Välkommen till Quartz",
+                _ => "Welcome to Quartz",
+            }
         }
     }
     pub fn worlds() -> &'static str {
@@ -3872,6 +4390,41 @@ pub mod settings {
     }
 }
 #[rustfmt::skip]
+pub mod sidebar {
+    pub fn get(key: &str) -> Option<&'static str> {
+        match key {
+            "files" => Some(files()),
+            "minecraft" => Some(minecraft()),
+            "running" => Some(running()),
+            _ => None,
+        }
+    }
+    pub fn files() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Dateien",
+            2 => "Fájlok",
+            3 => "Filer",
+            _ => "Files",
+        }
+    }
+    pub fn minecraft() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Minecraft",
+            2 => "Minecraft",
+            3 => "Minecraft",
+            _ => "Minecraft",
+        }
+    }
+    pub fn running() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Aktiv",
+            2 => "Futó",
+            3 => "Körs",
+            _ => "Running",
+        }
+    }
+}
+#[rustfmt::skip]
 pub mod skins {
     pub fn get(key: &str) -> Option<&'static str> {
         match key {
@@ -4350,6 +4903,121 @@ pub mod tools {
             2 => "Eszközök",
             3 => "Verktyg",
             _ => "Tools",
+        }
+    }
+}
+#[rustfmt::skip]
+pub mod whats_new {
+    pub fn get(key: &str) -> Option<&'static str> {
+        match key {
+            "feature_extract" => Some(feature_extract()),
+            "feature_home" => Some(feature_home()),
+            "feature_import" => Some(feature_import()),
+            "feature_mod_link" => Some(feature_mod_link()),
+            "feature_performance" => Some(feature_performance()),
+            "feature_refresh" => Some(feature_refresh()),
+            "feature_refresh_anim" => Some(feature_refresh_anim()),
+            "feature_updates" => Some(feature_updates()),
+            "subtitle" => Some(subtitle()),
+            "title" => Some(title()),
+            "welcome" => Some(welcome()),
+            _ => None,
+        }
+    }
+    pub fn feature_extract() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpack-Extraktion mit Fortschrittsprotokoll und Ordner-Installation",
+            2 => "Modpack kicsomagolás naplóval és mappákba telepítés",
+            3 => "Modpack-extrahering med förloppslogg och installation i mappar",
+            _ => "Modpack extraction with progress log and install-to-folders",
+        }
+    }
+    pub fn feature_home() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Neue Startseite mit Schnellstart, Statistiken, Modpack-Übersicht und Mod-Empfehlungen",
+            2 => "Új kezdőlap gyors indítással, statisztikákkal, modpack bemutatóval és mod ajánlásokkal",
+            3 => "Ny hemsida med snabbspel, statistik, modpack-översikt och modrekommendationer",
+            _ => "New Home page with quick play, stats, modpack showcase, and mod recommendations",
+        }
+    }
+    pub fn feature_import() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpacks aus Ordner importieren (Modrinth, CurseForge oder extrahiert)",
+            2 => "Modpack importálása mappából (Modrinth, CurseForge vagy kicsomagolt)",
+            3 => "Importera modpacks från mapp (Modrinth, CurseForge eller extraherat)",
+            _ => "Import modpacks from folder (Modrinth, CurseForge, or extracted)",
+        }
+    }
+    pub fn feature_mod_link() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Manuell installierte Mods mit Modrinth oder CurseForge für Updates verknüpfen",
+            2 => "Kézi modok Modrinth/CurseForge projekthez kapcsolása frissítéshez",
+            3 => "Länka manuellt installerade mods till Modrinth eller CurseForge för uppdateringar",
+            _ => "Link manually installed mods to Modrinth or CurseForge for updates",
+        }
+    }
+    pub fn feature_performance() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Performance-Tab pro Instanz mit hardwarebasierten FPS-Schätzungen",
+            2 => "Példányonkénti teljesítmény fül hardver-alapú FPS becsléssel",
+            3 => "Prestanda-flik per instans med hårdvarubaserade FPS-uppskattningar",
+            _ => "Per-instance Performance tab with hardware-aware FPS estimates",
+        }
+    }
+    pub fn feature_refresh() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Aktualisieren-Button in Mods-, Resourcepacks- und Shader-Tabs",
+            2 => "Frissítés gomb a Modok, Textúracsomagok és Shader füleken",
+            3 => "Uppdatera-knapp på flikarna Mods, Resurspaket och Shaders",
+            _ => "Refresh button on Mods, Resource Packs, and Shaders tabs",
+        }
+    }
+    pub fn feature_refresh_anim() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Dreh-Animation für den Aktualisieren-Button in Inhalts-Tabs",
+            2 => "Forgó animáció a frissítés gombon a tartalom fülökön",
+            3 => "Rotationsanimation på uppdateringsknappen i innehållsflikar",
+            _ => "Refresh button spin animation on content tabs",
+        }
+    }
+    pub fn feature_updates() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Automatische Launcher-Update-Prüfung",
+            2 => "Automatikus launcher frissítés-ellenőrzés",
+            3 => "Automatiska uppdateringskontroller för launchern",
+            _ => "Automatic launcher update checks",
+        }
+    }
+    pub fn subtitle() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Das ist neu in dieser Version:",
+            2 => "Az új verzióban:",
+            3 => "Det här är nytt i den här versionen:",
+            _ => "Here's what's new in this release:",
+        }
+    }
+    pub fn title() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Neuigkeiten",
+            2 => "Újdonságok",
+            3 => "Nyheter",
+            _ => "What's new",
+        }
+    }
+    pub fn version(version: &str) -> String {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => format!("Version {version}"),
+            2 => format!("{version} verzió"),
+            3 => format!("Version {version}"),
+            _ => format!("Version {version}"),
+        }
+    }
+    pub fn welcome() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Willkommen bei Quartz Launcher",
+            2 => "Üdv a Quartz Launcherben",
+            3 => "Välkommen till Quartz Launcher",
+            _ => "Welcome to Quartz Launcher",
         }
     }
 }
