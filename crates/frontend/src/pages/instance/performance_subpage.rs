@@ -1,6 +1,6 @@
 use bridge::instance::ContentFolder;
 use gpui::{prelude::*, *};
-use gpui_component::{ActiveTheme as _, Sizable, button::Button, h_flex, input::{InputEvent, InputState, NumberInput}, spinner::Spinner, v_flex};
+use gpui_component::{ActiveTheme as _, Disableable, Sizable, StyledExt, button::Button, h_flex, input::{InputEvent, InputState, NumberInput}, spinner::Spinner, v_flex};
 use prediction::{detect_hardware, predict_performance, HardwareProfile, WorkloadProfile};
 use schema::instance::InstanceMemoryConfiguration;
 
@@ -186,9 +186,13 @@ fn workload_row(label: impl Into<SharedString>, value: impl Into<SharedString>) 
 fn workload_flags(workload: WorkloadProfile, cx: &App) -> impl IntoElement {
     let theme = cx.theme();
     h_flex().gap_3().flex_wrap().text_sm().text_color(theme.muted_foreground)
-        .child(if workload.shaders { t::tools::performance::shaders() } else { t::instance::performance::no_shaders().into() })
+        .child(flag_text(if workload.shaders { t::tools::performance::shaders() } else { t::instance::performance::no_shaders() }))
         .child("•")
-        .child(if workload.optimization_mods { t::instance::performance::optimization_detected().into() } else { t::instance::performance::no_optimization_mods().into() })
+        .child(flag_text(if workload.optimization_mods { t::instance::performance::optimization_detected() } else { t::instance::performance::no_optimization_mods() }))
         .child("•")
-        .child(if workload.heavy_mods { t::instance::performance::heavy_modpack().into() } else { t::instance::performance::light_medium_load().into() })
+        .child(flag_text(if workload.heavy_mods { t::instance::performance::heavy_modpack() } else { t::instance::performance::light_medium_load() }))
+}
+
+fn flag_text(text: impl Into<SharedString>) -> SharedString {
+    text.into()
 }

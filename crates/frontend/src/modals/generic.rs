@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bridge::modal_action::{ModalAction, ProgressTrackerFinishType};
 use gpui::{prelude::*, *};
 use gpui_component::{
-    WindowExt, button::{Button, ButtonVariant, ButtonVariants}, notification::Notification, v_flex
+    ActiveTheme as _, WindowExt, button::{Button, ButtonVariant, ButtonVariants}, notification::Notification, scroll::ScrollableElement, v_flex
 };
 
 use crate::{component::{

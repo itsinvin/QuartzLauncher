@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.15] - 2026-07-02
+
+### Fixed
+- Compile errors in modpack extraction log modal and instance performance tab (missing trait imports)
+
 ## [5.2.14] - 2026-07-02
 
 ### Added
