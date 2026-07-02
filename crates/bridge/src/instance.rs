@@ -96,6 +96,7 @@ pub struct ContentSummary {
     pub rich_description: Option<Arc<FlatTextComponent>>,
     pub authors: Arc<str>,
     pub png_icon: Option<UniqueBytes>,
+    pub mixin_targets: Arc<[Arc<str>]>,
     pub extra: ContentType,
 }
 
@@ -132,6 +133,7 @@ pub static UNKNOWN_CONTENT_SUMMARY: Lazy<Arc<ContentSummary>> = Lazy::new(|| {
         version_str: "unknown".into(),
         rich_description: None,
         png_icon: None,
+        mixin_targets: Arc::from([]),
         extra: ContentType::Unknown,
     })
 });

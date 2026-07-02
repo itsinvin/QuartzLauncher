@@ -5,12 +5,12 @@ use bridge::{
 };
 use gpui::{prelude::*, *};
 use gpui_component::{
-    ActiveTheme as _, IndexPath, Sizable, WindowExt, button::{Button, ButtonVariants}, h_flex, input::SelectAll, list::ListState, notification::{Notification, NotificationType}, select::{Select, SelectEvent, SelectState}, switch::Switch, v_flex
+    ActiveTheme as _, IndexPath, Sizable, StyledExt, WindowExt, button::{Button, ButtonVariants}, h_flex, input::SelectAll, list::ListState, notification::{Notification, NotificationType}, select::{Select, SelectEvent, SelectState}, switch::Switch, v_flex
 };
 use schema::{content::{ContentInstallReason, ContentSource}, curseforge::CurseforgeClassId, loader::Loader, modrinth::ModrinthProjectType};
 use ustr::Ustr;
 
-use crate::{component::{content_list::ContentListDelegate, named_dropdown::{NamedDropdown, NamedDropdownItem}}, entity::instance::{ContentStates, InstanceEntry}, icon::QuartzIcon, interface_config::{InstanceContentSortKey, InterfaceConfig}, root, ui::PageType};
+use crate::{component::{content_list::ContentListDelegate, named_dropdown::{NamedDropdown, NamedDropdownItem}}, content_conflicts::detect_conflicts, entity::instance::{ContentStates, InstanceEntry}, icon::QuartzIcon, interface_config::{InstanceContentSortKey, InterfaceConfig}, root, ui::PageType};
 
 pub struct InstanceContentSubpage {
     content_type: ContentType,
@@ -164,6 +164,9 @@ impl InstanceContentSubpage {
 
         let mut content_list_delegate = ContentListDelegate::new(instance_id, backend_handle.clone(), instance_loader, instance_version, sort_key, enabled_first);
         content_list_delegate.set_content(content.read(cx));
+        content_list_delegate.set_conflicts(
+            detect_conflicts(content.read(cx), content_folder, instance_loader).per_item,
+        );
 
         let sort_dropdown = cx.new(|cx| {
             let items = valid_sort_modes.iter().map(|key| {
@@ -176,8 +179,12 @@ impl InstanceContentSubpage {
 
         let content_for_observe = content.clone();
         let content_list = cx.new(move |cx| {
-            cx.observe(&content_for_observe, |list: &mut ListState<ContentListDelegate>, content, cx| {
-                list.delegate_mut().set_content(content.read(cx));
+            cx.observe(&content_for_observe, move |list: &mut ListState<ContentListDelegate>, content, cx| {
+                let content = content.read(cx);
+                list.delegate_mut().set_content(content);
+                list.delegate_mut().set_conflicts(
+                    detect_conflicts(content, content_folder, instance_loader).per_item,
+                );
                 cx.notify();
             }).detach();
 
@@ -348,6 +355,43 @@ impl Render for InstanceContentSubpage {
                 })
             }));
 
+        let content_items = self.content.read(cx);
+        let conflicts = detect_conflicts(
+            content_items,
+            self.content_type.content_folder(),
+            self.instance_loader,
+        );
+
+        let conflict_panel = if conflicts.messages.is_empty() {
+            None
+        } else {
+            Some(
+                v_flex()
+                    .gap_1()
+                    .p_3()
+                    .rounded_lg()
+                    .border_1()
+                    .border_color(theme.warning)
+                    .bg(theme.warning.opacity(0.08))
+                    .child(
+                        h_flex()
+                            .gap_2()
+                            .items_center()
+                            .child(QuartzIcon::TriangleAlert)
+                            .child(div().text_base().font_medium().child(t::instance::content::conflicts::title()))
+                            .child(
+                                div()
+                                    .text_sm()
+                                    .text_color(theme.muted_foreground)
+                                    .child(t::instance::content::conflicts::summary(conflicts.messages.len())),
+                            ),
+                    )
+                    .children(conflicts.messages.into_iter().map(|message| {
+                        div().text_sm().pl_6().child(message)
+                    })),
+            )
+        };
+
         let filter_bar_controls = h_flex()
             .cursor_default()
             .block_mouse_except_scroll()
@@ -392,6 +436,7 @@ impl Render for InstanceContentSubpage {
 
         v_flex().p_4().gap_3().size_full()
             .child(header)
+            .when_some(conflict_panel, |this, panel| this.child(panel))
             .child(div()
                 .id("content-list-area")
                 .relative()

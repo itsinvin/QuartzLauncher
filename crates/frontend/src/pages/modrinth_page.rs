@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, ops::Range, sync::{Arc, atomic::AtomicBool}, time::Duration};
 
-use bridge::{install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, ContentUpdateStatus, InstanceContentID, InstanceID}, message::MessageToBackend, meta::MetadataRequest, modal_action::ModalAction};
+use bridge::{handle::BackendHandle, install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, ContentUpdateStatus, InstanceContentID, InstanceID}, message::MessageToBackend, meta::MetadataRequest, modal_action::ModalAction};
 use enumset::EnumSet;
 use gpui::{prelude::*, *};
 use gpui_component::{
@@ -50,6 +50,19 @@ pub struct ModrinthSearchPage {
 pub struct InstalledContent {
     pub content_id: InstanceContentID,
     pub status: ContentUpdateStatus
+}
+
+pub fn remove_installed_content(
+    install_for: InstanceID,
+    content_ids: impl IntoIterator<Item = InstanceContentID>,
+    backend_handle: &BackendHandle,
+) {
+    let content_ids: Vec<_> = content_ids.into_iter().collect();
+    if content_ids.is_empty() {
+        return;
+    }
+
+    backend_handle.send(MessageToBackend::DeleteContent { id: install_for, content_ids });
 }
 
 pub fn get_primary_action(
@@ -655,6 +668,29 @@ impl ModrinthSearchPage {
                         }
                     });
 
+                let mut action_buttons = h_flex().gap_1().child(install_button);
+                if let Some(install_for) = self.install_for {
+                    if let Some(installed) = self.all_installed_content_by_project.get(&hit.project_id).filter(|content| !content.is_empty()) {
+                        let installed = installed.clone();
+                        let backend_handle = self.data.backend_handle.clone();
+                        action_buttons = action_buttons.child(
+                            Button::new(("remove", index))
+                                .label(t::instance::content::remove::label())
+                                .icon(QuartzIcon::Trash2)
+                                .danger()
+                                .compact()
+                                .tooltip(t::instance::content::remove::tooltip())
+                                .on_click(move |_, _, _| {
+                                    remove_installed_content(
+                                        install_for,
+                                        installed.iter().map(|content| content.content_id),
+                                        &backend_handle,
+                                    );
+                                }),
+                        );
+                    }
+                }
+
                 let item = h_flex()
                     .rounded_lg()
                     .px_4()
@@ -710,7 +746,7 @@ impl ModrinthSearchPage {
                                     .children(std::iter::once(environment).chain(categories)),
                             ),
                     )
-                    .child(v_flex().items_end().gap_2().child(favorite_button).child(downloads).child(install_button));
+                    .child(v_flex().items_end().gap_2().child(favorite_button).child(downloads).child(action_buttons));
 
                 div().pl_3().pt_3().child(item)
             })

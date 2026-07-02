@@ -833,6 +833,87 @@ pub mod instance {
             }
         }
         #[rustfmt::skip]
+        pub mod conflicts {
+            pub fn get(key: &str) -> Option<&'static str> {
+                match key {
+                    "title" => Some(title()),
+                    _ => None,
+                }
+            }
+            pub fn duplicate_curseforge_project(id: u32, files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Mehrere Dateien vom selben CurseForge-Projekt #{id}: {files}"),
+                    2 => format!("Több fájl ugyanabból a CurseForge projektből #{id}: {files}"),
+                    3 => format!("Flera filer från samma CurseForge-projekt #{id}: {files}"),
+                    _ => format!("Multiple files from the same CurseForge project #{id}: {files}"),
+                }
+            }
+            pub fn duplicate_file(files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Identische Dateien unter verschiedenen Namen installiert: {files}"),
+                    2 => format!("Azonos fájlok különböző neveken telepítve: {files}"),
+                    3 => format!("Identiska filer installerade under olika namn: {files}"),
+                    _ => format!("Identical files installed under different names: {files}"),
+                }
+            }
+            pub fn duplicate_mod_id(id: &str, files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Doppelte Mod-ID '{id}': {files}"),
+                    2 => format!("Duplikált mod ID '{id}': {files}"),
+                    3 => format!("Duplicerat mod-ID '{id}': {files}"),
+                    _ => format!("Duplicate mod ID '{id}': {files}"),
+                }
+            }
+            pub fn duplicate_modrinth_project(id: &str, files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Mehrere Dateien vom selben Modrinth-Projekt '{id}': {files}"),
+                    2 => format!("Több fájl ugyanabból a Modrinth projektből '{id}': {files}"),
+                    3 => format!("Flera filer från samma Modrinth-projekt '{id}': {files}"),
+                    _ => format!("Multiple files from the same Modrinth project '{id}': {files}"),
+                }
+            }
+            pub fn duplicate_name(name: &str, files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Mehrere Dateien teilen den Namen '{name}': {files}"),
+                    2 => format!("Több fájl osztozik a '{name}' néven: {files}"),
+                    3 => format!("Flera filer delar namnet '{name}': {files}"),
+                    _ => format!("Multiple files share the name '{name}': {files}"),
+                }
+            }
+            pub fn loader_mismatch(file: &str, required: &str, actual: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("'{file}' benötigt {required}, diese Instanz verwendet jedoch {actual}"),
+                    2 => format!("'{file}' {required} loadert igényel, de ez a példány {actual} loadert használ"),
+                    3 => format!("'{file}' kräver {required} men denna instans använder {actual}"),
+                    _ => format!("'{file}' requires {required} but this instance uses {actual}"),
+                }
+            }
+            pub fn mixin_target(target: &str, files: &str) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("Mehrere Mods mixin in '{target}': {files}"),
+                    2 => format!("Több mod mixin a '{target}' osztályba: {files}"),
+                    3 => format!("Flera mods mixin:ar in i '{target}': {files}"),
+                    _ => format!("Multiple mods mixin into '{target}': {files}"),
+                }
+            }
+            pub fn summary(count: usize) -> String {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => format!("{count} Konflikt(e) bei aktiviertem Inhalt gefunden"),
+                    2 => format!("{count} ütközés található az engedélyezett tartalmak között"),
+                    3 => format!("{count} konflikt(er) hittades bland aktiverat innehåll"),
+                    _ => format!("{count} conflict(s) found among enabled content"),
+                }
+            }
+            pub fn title() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Konflikte erkannt",
+                    2 => "Ütközések észlelve",
+                    3 => "Konflikter upptäckta",
+                    _ => "Conflicts detected",
+                }
+            }
+        }
+        #[rustfmt::skip]
         pub mod downloads {
             pub fn b(num: f64) -> String {
                 match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
@@ -1379,6 +1460,32 @@ pub mod instance {
                 2 => "Frissítés",
                 3 => "Uppdatera",
                 _ => "Refresh",
+            }
+        }
+        #[rustfmt::skip]
+        pub mod remove {
+            pub fn get(key: &str) -> Option<&'static str> {
+                match key {
+                    "label" => Some(label()),
+                    "tooltip" => Some(tooltip()),
+                    _ => None,
+                }
+            }
+            pub fn label() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Entfernen",
+                    2 => "Eltávolítás",
+                    3 => "Ta bort",
+                    _ => "Remove",
+                }
+            }
+            pub fn tooltip() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Aus Instanz entfernen",
+                    2 => "Eltávolítás a példányból",
+                    3 => "Ta bort från instans",
+                    _ => "Remove from instance",
+                }
             }
         }
         pub fn requesting_from_modrinth_error() -> &'static str {

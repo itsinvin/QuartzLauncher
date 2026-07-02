@@ -397,6 +397,7 @@ impl ModMetadataManager {
                 version_str: "".into(),
                 rich_description: None,
                 png_icon: None,
+                mixin_targets: Arc::from([]),
                 extra: ContentType::ShaderPack
             });
         }
@@ -444,6 +445,8 @@ impl ModMetadataManager {
             "".into()
         };
 
+        let mixin_targets = crate::mixin_metadata::extract_mixin_targets(archive, &bytes);
+
         Some(Arc::new(ContentSummary {
             id: Some(fabric_mod_json.id),
             hash,
@@ -453,6 +456,7 @@ impl ModMetadataManager {
             version_str: create_version_string(&fabric_mod_json.version),
             rich_description: None,
             png_icon,
+            mixin_targets,
             extra: ContentType::Fabric
         }))
     }
@@ -506,6 +510,7 @@ impl ModMetadataManager {
             version_str: version.into(),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra,
         }))
     }
@@ -557,6 +562,7 @@ impl ModMetadataManager {
             version_str: version.into(),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::LegacyForge,
         }))
     }
@@ -698,6 +704,7 @@ impl ModMetadataManager {
             version_str: create_version_string(&modrinth_index_json.version_id),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::ModrinthModpack {
                 files: modpack_files.into(),
                 dependencies: modrinth_index_json.dependencies,
@@ -841,6 +848,7 @@ impl ModMetadataManager {
             version_str: create_version_string(&manifest_json.version),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::CurseforgeModpack {
                 unknown_files: unknown_files.into(),
                 files: modpack_files.into(),
@@ -918,6 +926,7 @@ impl ModMetadataManager {
             version_str: version.unwrap_or_default(),
             rich_description: None,
             png_icon: None,
+            mixin_targets: Arc::from([]),
             extra: ContentType::JavaModule
         }))
     }
@@ -945,6 +954,7 @@ impl ModMetadataManager {
             version_str: "".into(),
             rich_description: Some(Arc::new(pack_mcmeta.pack.description)),
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::ResourcePack
         }))
     }
@@ -966,6 +976,7 @@ impl ModMetadataManager {
             version_str: "".into(),
             rich_description: Some(Arc::new(pack_mcmeta.pack.description)),
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::ResourcePack
         }))
     }
@@ -1091,6 +1102,7 @@ impl ModMetadataManager {
             version_str: create_version_string(&modrinth_index_json.version_id),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::ModrinthModpack {
                 files: modpack_files.into(),
                 dependencies: modrinth_index_json.dependencies,
@@ -1212,6 +1224,7 @@ impl ModMetadataManager {
             version_str: create_version_string(&manifest_json.version),
             rich_description: None,
             png_icon,
+            mixin_targets: Arc::from([]),
             extra: ContentType::CurseforgeModpack {
                 unknown_files: unknown_files.into(),
                 files: modpack_files.into(),
