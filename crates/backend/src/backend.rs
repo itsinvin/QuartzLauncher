@@ -1221,6 +1221,161 @@ impl BackendState {
         }
     }
 
+    pub struct ApplyModpackAffectedFolders {
+        pub resource_packs: bool,
+        pub shaders: bool,
+    }
+
+    fn should_override_modpack_file(path: &str, dest: &Path, new_sha1: [u8; 20], aux: &Option<AuxiliaryContentMeta>) -> bool {
+        let Some(aux) = aux else {
+            return true;
+        };
+        let Some(old_sha1) = aux.applied_overrides.filename_to_hash.get(path) else {
+            return true;
+        };
+
+        if path.starts_with("config/yosbr/") {
+            return !crate::check_sha1_hash(dest, new_sha1).unwrap_or(false);
+        }
+
+        let mut old_hash = [0u8; 20];
+        let Ok(_) = hex::decode_to_slice(&**old_sha1, &mut old_hash) else {
+            return true;
+        };
+
+        if let Ok(matches) = crate::check_sha1_hash(dest, old_hash) {
+            matches && old_hash != new_sha1
+        } else {
+            true
+        }
+    }
+
+    pub fn apply_modpack_files_to_instance(
+        self: &Arc<Self>,
+        summary: &InstanceContentSummary,
+        dot_minecraft_dir: &Path,
+        modal_action: &ModalAction,
+    ) -> ApplyModpackAffectedFolders {
+        let mut affected = ApplyModpackAffectedFolders {
+            resource_packs: false,
+            shaders: false,
+        };
+
+        let content_summary = self.mod_metadata_manager.get_path(&summary.path);
+        let files = match &content_summary.extra {
+            ContentType::ModrinthModpack { files, .. } => files,
+            ContentType::CurseforgeModpack { files, .. } => files,
+            _ => {
+                modal_action.append_log("Not a modpack — nothing to install.", &self.send);
+                return affected;
+            },
+        };
+
+        let filtered_files = files.iter().filter(|file| {
+            let mut id = None;
+            let mut name = None;
+
+            if let Some(content_summary) = &file.summary {
+                id = content_summary.id.as_ref().map(|s| &**s);
+                name = content_summary.name.as_ref().map(|s| &**s);
+            }
+
+            summary.disabled_children.is_enabled(file.default_disabled, id, name, file.path.as_str())
+        }).cloned().collect::<Vec<_>>();
+
+        if filtered_files.is_empty() {
+            modal_action.append_log("No modpack files to install.", &self.send);
+            return affected;
+        }
+
+        modal_action.append_log("Installing modpack files into instance folders…", &self.send);
+
+        let tracker = ProgressTracker::new("Installing modpack files".into(), self.send.clone());
+        modal_action.trackers.push(tracker.clone());
+        tracker.set_total(filtered_files.len());
+        tracker.notify();
+
+        let content_library_dir = &self.directories.content_library_dir;
+        let mut aux: Option<AuxiliaryContentMeta> = crate::pandora_aux_path_for_content(summary)
+            .and_then(|aux_path| crate::read_json(&aux_path).ok());
+        let aux_path = crate::pandora_aux_path_for_content(summary);
+        let mut aux_changed = false;
+
+        for file in filtered_files {
+            let Some(rel_path) = file.path() else {
+                log::warn!("Skipping modpack file {:?} because path cannot be determined", file.path);
+                tracker.add_count(1);
+                tracker.notify();
+                continue;
+            };
+
+            let path_str = file.path.as_str();
+            if path_str.starts_with("resourcepacks/") {
+                affected.resource_packs = true;
+            } else if path_str.starts_with("shaderpacks/") {
+                affected.shaders = true;
+            }
+
+            let dest_path = rel_path.to_path(dot_minecraft_dir);
+
+            let installed = match &file.source {
+                ModpackFileSource::Builtin { bytes } => {
+                    if should_override_modpack_file(path_str, &dest_path, file.hash, &aux) {
+                        if let Some(parent) = dest_path.parent() {
+                            _ = std::fs::create_dir_all(parent);
+                        }
+                        if let Some(aux) = &mut aux {
+                            let sha1 = hex::encode(file.hash);
+                            aux.applied_overrides.filename_to_hash.insert(path_str.into(), sha1.into());
+                            aux_changed = true;
+                        }
+                        crate::write_safe(&dest_path, bytes).is_ok()
+                    } else {
+                        false
+                    }
+                },
+                _ => {
+                    let content_path = crate::create_content_library_path(content_library_dir, file.hash, rel_path.extension());
+                    if !content_path.exists() {
+                        modal_action.append_log(format!("Missing downloaded file for {path_str}"), &self.send);
+                        false
+                    } else if should_override_modpack_file(path_str, &dest_path, file.hash, &aux) {
+                        if let Some(parent) = dest_path.parent() {
+                            _ = std::fs::create_dir_all(parent);
+                        }
+                        if let Some(aux) = &mut aux {
+                            let sha1 = hex::encode(file.hash);
+                            aux.applied_overrides.filename_to_hash.insert(path_str.into(), sha1.into());
+                            aux_changed = true;
+                        }
+                        std::fs::copy(&content_path, &dest_path).is_ok()
+                    } else {
+                        false
+                    }
+                },
+            };
+
+            if installed {
+                modal_action.append_log(format!("Installed {path_str}"), &self.send);
+            }
+
+            tracker.add_count(1);
+            tracker.notify();
+        }
+
+        if aux_changed {
+            if let Some(aux_path) = aux_path {
+                if let Ok(bytes) = serde_json::to_vec(aux.as_ref().unwrap()) {
+                    _ = crate::write_safe(&aux_path, &bytes);
+                }
+            }
+        }
+
+        tracker.set_finished(ProgressTrackerFinishType::Normal);
+        tracker.notify();
+        affected
+    }
+
     pub async fn create_instance_sanitized(&self, name: &str, version: &str, loader: Loader, icon: Option<EmbeddedOrRaw>) -> Option<PathBuf> {
         let mut name = sanitize_filename::sanitize_with_options(name, sanitize_filename::Options { windows: true, ..Default::default() });
 

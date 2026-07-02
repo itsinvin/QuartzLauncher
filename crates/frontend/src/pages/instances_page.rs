@@ -3,12 +3,12 @@ use std::time::Duration;
 use bridge::handle::BackendHandle;
 use gpui::{prelude::*, *};
 use gpui_component::{
-    IndexPath, button::{Button, ButtonVariants}, h_flex, input::{Input, InputEvent, InputState}, select::{Select, SelectDelegate, SelectEvent, SelectItem, SelectState}, table::{DataTable, TableState}, v_flex, ActiveTheme, Sizable
+    IndexPath, button::{Button, ButtonVariants}, h_flex, input::{Input, InputEvent, InputState}, select::{Select, SelectDelegate, SelectEvent, SelectItem, SelectState}, table::{DataTable, TableState}, v_flex, ActiveTheme, Sizable, StyledExt
 };
 use strum::IntoEnumIterator;
 
 use crate::{
-    component::{animation, instance_list::InstanceList, named_dropdown::{NamedDropdown, NamedDropdownItem}, quartz_logo::QuartzLogo, responsive_grid::ResponsiveGrid}, entity::{DataEntities, instance::InstanceEntries, metadata::FrontendMetadata}, icon::QuartzIcon, interface_config::{InstancesViewMode, InterfaceConfig}, pages::page::Page,
+    component::{animation, instance_list::InstanceList, named_dropdown::{NamedDropdown, NamedDropdownItem}, quartz_logo::QuartzLogo, responsive_grid::ResponsiveGrid}, entity::{DataEntities, instance::InstanceEntries, metadata::FrontendMetadata}, icon::QuartzIcon, interface_config::{InstancesViewMode, InterfaceConfig}, pages::{import::ImportPage, page::Page},
     modals, MINECRAFT_FONT,
 };
 
@@ -18,6 +18,7 @@ pub struct InstancesPage {
     search_state: Entity<InputState>,
     _search_subscription: Subscription,
     search_generation: usize,
+    import_page: Entity<ImportPage>,
 
     metadata: Entity<FrontendMetadata>,
     instances: Entity<InstanceEntries>,
@@ -77,10 +78,24 @@ impl InstancesPage {
             search_state,
             _search_subscription,
             search_generation: 0,
+            import_page: cx.new(|cx| ImportPage::new(data, window, cx)),
             metadata: data.metadata.clone(),
             instances: data.instances.clone(),
             backend_handle: data.backend_handle.clone(),
         }
+    }
+
+    fn import_section(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = cx.theme();
+        v_flex()
+            .w_full()
+            .pt_6()
+            .mt_4()
+            .gap_3()
+            .border_t_1()
+            .border_color(theme.border)
+            .child(div().text_lg().font_semibold().child(t::import::title()))
+            .child(self.import_page.update(cx, |page, cx| page.render(window, cx).into_any_element()))
     }
 }
 
@@ -105,11 +120,8 @@ impl Page for InstancesPage {
             .child(select_view)
     }
 
-    fn scrollable(&self, cx: &App) -> bool {
-        match InterfaceConfig::get(cx).instances_view_mode {
-            InstancesViewMode::Cards => true,
-            InstancesViewMode::List => false,
-        }
+    fn scrollable(&self, _cx: &App) -> bool {
+        true
     }
 }
 
@@ -127,62 +139,74 @@ impl Render for InstancesPage {
                 .size_full()
                 .p_8()
                 .gap_4()
-                .justify_center()
-                .items_center()
                 .child(
-                    div()
-                        .p_4()
-                        .rounded(theme.radius_lg)
-                        .border_1()
-                        .border_color(theme.sidebar_primary.opacity(0.35))
-                        .bg(theme.muted)
-                        .child(QuartzLogo::new(logo_size)),
+                    v_flex()
+                        .flex_1()
+                        .gap_4()
+                        .justify_center()
+                        .items_center()
+                        .child(
+                            div()
+                                .p_4()
+                                .rounded(theme.radius_lg)
+                                .border_1()
+                                .border_color(theme.sidebar_primary.opacity(0.35))
+                                .bg(theme.muted)
+                                .child(QuartzLogo::new(logo_size)),
+                        )
+                        .child(
+                            div()
+                                .text_xl()
+                                .font_family(SharedString::new_static(MINECRAFT_FONT))
+                                .text_color(theme.sidebar_primary)
+                                .child(t::instance::welcome::title()),
+                        )
+                        .child(
+                            div()
+                                .text_sm()
+                                .text_color(theme.muted_foreground)
+                                .max_w_96()
+                                .text_center()
+                                .child(t::instance::welcome::subtitle()),
+                        )
+                        .child(
+                            Button::new("welcome_create")
+                                .success()
+                                .icon(QuartzIcon::Plus)
+                                .label(t::instance::create())
+                                .on_click(cx.listener(|this, _, window, cx| {
+                                    modals::create_instance::open_create_instance(
+                                        this.metadata.clone(),
+                                        this.instances.clone(),
+                                        this.backend_handle.clone(),
+                                        window,
+                                        cx,
+                                    );
+                                })),
+                        ),
                 )
-                .child(
-                    div()
-                        .text_xl()
-                        .font_family(SharedString::new_static(MINECRAFT_FONT))
-                        .text_color(theme.sidebar_primary)
-                        .child(t::instance::welcome::title()),
-                )
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(theme.muted_foreground)
-                        .max_w_96()
-                        .text_center()
-                        .child(t::instance::welcome::subtitle()),
-                )
-                .child(
-                    Button::new("welcome_create")
-                        .success()
-                        .icon(QuartzIcon::Plus)
-                        .label(t::instance::create())
-                        .on_click(cx.listener(|this, _, window, cx| {
-                            modals::create_instance::open_create_instance(
-                                this.metadata.clone(),
-                                this.instances.clone(),
-                                this.backend_handle.clone(),
-                                window,
-                                cx,
-                            );
-                        })),
-                )
+                .child(self.import_section(window, cx))
                 .into_any_element();
         }
 
         if no_results {
             return v_flex()
                 .size_full()
-                .p_8()
-                .justify_center()
-                .items_center()
-                .text_color(cx.theme().muted_foreground)
-                .child(t::instance::search_no_results())
+                .p_4()
+                .gap_4()
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .justify_center()
+                        .items_center()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(t::instance::search_no_results()),
+                )
+                .child(self.import_section(window, cx))
                 .into_any_element();
         }
 
-        match InterfaceConfig::get(cx).instances_view_mode {
+        let main_content = match InterfaceConfig::get(cx).instances_view_mode {
             InstancesViewMode::Cards => {
                 let cards = self.instance_table.update(cx, |table, cx| {
                     let rows = table.delegate().visible_count();
@@ -196,12 +220,20 @@ impl Render for InstancesPage {
                     gpui::AvailableSpace::MinContent
                 );
 
-                div().p_4().child(ResponsiveGrid::new(size).size_full().gap_4().children(cards)).into_any_element()
+                div().child(ResponsiveGrid::new(size).w_full().gap_4().children(cards)).into_any_element()
             },
             InstancesViewMode::List => {
                 DataTable::new(&self.instance_table).bordered(false).into_any_element()
             },
-        }
+        };
+
+        v_flex()
+            .size_full()
+            .p_4()
+            .gap_4()
+            .child(main_content)
+            .child(self.import_section(window, cx))
+            .into_any_element()
     }
 }
 

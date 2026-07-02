@@ -1,7 +1,7 @@
 use std::{path::{Path, PathBuf}, sync::Arc};
 
 use bridge::{
-    handle::BackendHandle, install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, InstanceContentSummary, InstanceID}
+    handle::BackendHandle, install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, InstanceContentSummary, InstanceID}, message::MessageToBackend
 };
 use gpui::{prelude::*, *};
 use gpui_component::{
@@ -10,7 +10,7 @@ use gpui_component::{
 use schema::{content::{ContentInstallReason, ContentSource}, curseforge::CurseforgeClassId, loader::Loader, modrinth::ModrinthProjectType};
 use ustr::Ustr;
 
-use crate::{component::{content_list::ContentListDelegate, named_dropdown::{NamedDropdown, NamedDropdownItem}}, entity::instance::{ContentStates, InstanceEntry}, interface_config::{InstanceContentSortKey, InterfaceConfig}, root, ui::PageType};
+use crate::{component::{content_list::ContentListDelegate, named_dropdown::{NamedDropdown, NamedDropdownItem}}, entity::instance::{ContentStates, InstanceEntry}, icon::QuartzIcon, interface_config::{InstanceContentSortKey, InterfaceConfig}, root, ui::PageType};
 
 pub struct InstanceContentSubpage {
     content_type: ContentType,
@@ -248,6 +248,14 @@ impl Render for InstanceContentSubpage {
             .border_color(theme.border)
             .bg(theme.sidebar)
             .child(div().text_xl().line_height(relative(1.35)).child(self.content_type.title()))
+            .child(Button::new("refresh").label(t::instance::content::refresh()).icon(QuartzIcon::RefreshCcw).compact().small().on_click({
+                let backend_handle = self.backend_handle.clone();
+                let instance_id = self.instance;
+                let content_folder = self.content_type.content_folder();
+                move |_, _, _| {
+                    backend_handle.send(MessageToBackend::ReloadContentFolder { id: instance_id, content_folder });
+                }
+            }))
             .child(Button::new("update").label(t::instance::content::update::check::label(false)).success().compact().small().on_click({
                 let backend_handle = self.backend_handle.clone();
                 let instance_id = self.instance;

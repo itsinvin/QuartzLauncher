@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     component::{animation, menu::{MenuGroup, MenuGroupItem, MenuIndicator}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
         DataEntities, account::AccountExt, instance::{InstanceAddedEvent, InstanceEntries, InstanceModifiedEvent, InstanceMovedToTopEvent, InstanceRemovedEvent}
-    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
+    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage}, png_render_cache, MINECRAFT_FONT,
 };
 
 pub struct LauncherUI {
@@ -215,6 +215,16 @@ impl LauncherUI {
         let main_page = config.main_page.clone();
         let original_page_path = config.page_path.clone();
 
+        let main_page = match &main_page {
+            PageType::Import | PageType::Syncing => {
+                let config = InterfaceConfig::get_mut(cx);
+                config.main_page = PageType::Instances;
+                config.page_path = [].into();
+                PageType::Instances
+            },
+            other => other.clone(),
+        };
+
         // If main_page failed to deserialize, also reset the path
         if main_page == PageType::Instances {
             let config = InterfaceConfig::get_mut(cx);
@@ -286,11 +296,8 @@ impl LauncherUI {
                 Ok(LauncherPage::Curseforge(page))
 
             },
-            PageType::Import => {
-                Ok(LauncherPage::Import(cx.new(|cx| ImportPage::new(data, window, cx))))
-            },
-            PageType::Syncing => {
-                Ok(LauncherPage::Syncing(cx.new(|cx| SyncingPage::new(data, window, cx))))
+            PageType::Import | PageType::Syncing => {
+                Err(PageType::Instances)
             },
             PageType::Performance => {
                 Ok(LauncherPage::Performance(cx.new(|cx| PerformancePage::new(data, window, cx))))
@@ -464,18 +471,6 @@ impl Render for LauncherUI {
                     launcher.switch_page(PageType::Curseforge { installing_for: None }, &[], window, cx);
                 })));
 
-        let files_group = MenuGroup::new(t::sidebar::files())
-            .child(MenuGroupItem::new(t::import::title())
-                .active(page_type == PageType::Import)
-                .on_click(cx.listener(|launcher, _, window, cx| {
-                    launcher.switch_page(PageType::Import, &[], window, cx);
-                })))
-            .child(MenuGroupItem::new(t::instance::sync::label())
-                .active(page_type == PageType::Syncing)
-                .on_click(cx.listener(|launcher, _, window, cx| {
-                    launcher.switch_page(PageType::Syncing, &[], window, cx);
-                })));
-
         let tools_group = MenuGroup::new(t::tools::title())
             .child(MenuGroupItem::new(t::tools::performance::title())
                 .active(page_type == PageType::Performance)
@@ -487,7 +482,6 @@ impl Render for LauncherUI {
 
         let _ = groups.push(library_group);
         let _ = groups.push(content_group);
-        let _ = groups.push(files_group);
         let _ = groups.push(tools_group);
 
         let running_instances: Vec<(InstanceID, SharedString)> = self

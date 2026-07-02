@@ -163,6 +163,10 @@ pub enum MessageToBackend {
         id: InstanceID,
         content_folder: ContentFolder,
     },
+    ReloadContentFolder {
+        id: InstanceID,
+        content_folder: ContentFolder,
+    },
     SetContentEnabled {
         id: InstanceID,
         content_ids: Vec<InstanceContentID>,

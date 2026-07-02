@@ -15,13 +15,14 @@ use gpui_component::{
 };
 use schema::backend_config::{BackendConfig, ProxyConfig, ProxyProtocol};
 
-use crate::{entity::DataEntities, icon::QuartzIcon, interface_config::InterfaceConfig};
+use crate::{entity::DataEntities, icon::QuartzIcon, interface_config::InterfaceConfig, pages::syncing_page::SyncingPage};
 
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
 enum SettingsTab {
     #[default]
     Interface,
     Network,
+    Sync,
 }
 
 struct Settings {
@@ -29,6 +30,7 @@ struct Settings {
     theme_folder: Arc<Path>,
     theme_select: Entity<SelectState<SearchableVec<SharedString>>>,
     backend_handle: BackendHandle,
+    syncing_page: Entity<SyncingPage>,
     pending_request: bool,
     backend_config: Option<BackendConfig>,
     get_configuration_task: Option<Task<()>>,
@@ -90,6 +92,7 @@ pub fn build_settings_sheet(data: &DataEntities, window: &mut Window, cx: &mut A
             theme_folder,
             theme_select,
             backend_handle: data.backend_handle.clone(),
+            syncing_page: cx.new(|cx| SyncingPage::new(data, window, cx)),
             pending_request: false,
             backend_config: None,
             get_configuration_task: None,
@@ -130,6 +133,7 @@ pub fn build_settings_sheet(data: &DataEntities, window: &mut Window, cx: &mut A
         sheet
             .title(t::settings::title())
             .size(px(420.))
+            .h(px(520.))
             .p_0()
             .when(cfg!(target_os = "macos"), |this| this.pt_5())
             .child(v_flex()
@@ -444,14 +448,17 @@ impl Render for Settings {
             .selected_index(match selected_tab {
                 SettingsTab::Interface => 0,
                 SettingsTab::Network => 1,
+                SettingsTab::Sync => 2,
             })
             .underline()
             .child(Tab::new().label(t::settings::interface()))
             .child(Tab::new().label(t::settings::network()))
+            .child(Tab::new().label(t::instance::sync::label()))
             .on_click(cx.listener(|settings, index, _window, cx| {
                 settings.selected_tab = match index {
                     0 => SettingsTab::Interface,
                     1 => SettingsTab::Network,
+                    2 => SettingsTab::Sync,
                     _ => SettingsTab::Interface,
                 };
                 cx.notify();
@@ -460,6 +467,7 @@ impl Render for Settings {
         let content = match selected_tab {
             SettingsTab::Interface => self.render_interface_tab(window, cx).into_any_element(),
             SettingsTab::Network => self.render_network_tab(window, cx).into_any_element(),
+            SettingsTab::Sync => self.syncing_page.update(cx, |page, cx| page.render(window, cx).into_any_element()),
         };
 
         v_flex()

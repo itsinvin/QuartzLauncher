@@ -81,6 +81,12 @@ impl BackendState {
             MessageToBackend::RequestLoadContentFolder { id, content_folder } => {
                 tokio::task::spawn(Instance::load_content(self.clone(), id, content_folder));
             },
+            MessageToBackend::ReloadContentFolder { id, content_folder } => {
+                if let Some(instance) = self.instance_state.write().instances.get_mut(id) {
+                    instance.mark_content_dirty(self, content_folder, FolderChanges::all_dirty(), false);
+                }
+                tokio::task::spawn(Instance::load_content(self.clone(), id, content_folder));
+            },
             MessageToBackend::CreateInstance { name, version, loader, icon } => {
                 self.create_instance(&name, &version, loader, icon).await;
             },
@@ -414,7 +420,7 @@ impl BackendState {
                 }
             },
             MessageToBackend::DownloadContentChildren { id, content_id, modal_action } => {
-                let (summary, loader, minecraft_version) = {
+                let (summary, loader, minecraft_version, dot_minecraft_dir, instance_running) = {
                     let mut instance_state = self.instance_state.write();
                     let Some(instance) = instance_state.instances.get_mut(id) else {
                         modal_action.set_error_message("Unable to find instance".into());
@@ -428,17 +434,40 @@ impl BackendState {
                     };
                     let summary = summary.clone();
                     let configuration = instance.configuration.get();
-                    (summary, configuration.loader, configuration.minecraft_version)
+                    (
+                        summary,
+                        configuration.loader,
+                        configuration.minecraft_version,
+                        instance.dot_minecraft_folder.clone(),
+                        !instance.processes.is_empty(),
+                    )
                 };
 
                 let this = self.clone();
                 tokio::spawn(async move {
                     this.download_modpack_children(&summary, loader, minecraft_version, &modal_action).await;
 
+                    let affected = this.apply_modpack_files_to_instance(&summary, &dot_minecraft_dir, &modal_action);
+
+                    if instance_running {
+                        modal_action.append_log("Instance is running — modpack file was kept in place.", &this.send);
+                    } else if let Err(err) = std::fs::remove_file(&summary.path) {
+                        modal_action.append_log(format!("Could not remove modpack file: {err}"), &this.send);
+                    } else {
+                        modal_action.append_log("Removed modpack file.", &this.send);
+                        if let Some(aux_path) = crate::pandora_aux_path_for_content(&summary) {
+                            _ = std::fs::remove_file(aux_path);
+                        }
+                    }
+
                     if let Some(instance) = this.instance_state.write().instances.get_mut(id) {
-                        let mut changes = FolderChanges::no_changes();
-                        changes.dirty_path(summary.path);
-                        instance.mark_content_dirty(&this, ContentFolder::Mods, changes, true);
+                        instance.mark_content_dirty(&this, ContentFolder::Mods, FolderChanges::all_dirty(), true);
+                        if affected.resource_packs {
+                            instance.mark_content_dirty(&this, ContentFolder::ResourcePacks, FolderChanges::all_dirty(), true);
+                        }
+                        if affected.shaders {
+                            instance.mark_content_dirty(&this, ContentFolder::Shaders, FolderChanges::all_dirty(), true);
+                        }
                     }
 
                     modal_action.append_log("Modpack extraction complete.", &this.send);

@@ -1373,6 +1373,11 @@ en = "Mods"
 de = "Mods"
 hu = "Modok"
 sv = "Mods"
+[instance.content.refresh]
+en = "Refresh"
+de = "Aktualisieren"
+hu = "Frissítés"
+sv = "Uppdatera"
 [instance.content.modpacks]
 en = "Modpacks"
 de = "Modpakete"

@@ -94,7 +94,7 @@ impl Page for ImportPage {
 
 impl Render for ImportPage {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let mut content = v_flex().size_full().p_3().gap_3()
+        let mut content = v_flex().w_full().p_3().gap_3()
             .child(ResponsiveGrid::new(Size::new(AvailableSpace::MinContent, AvailableSpace::MinContent))
                 .gap_2()
                 .children({

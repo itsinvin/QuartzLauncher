@@ -4,6 +4,16 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.17] - 2026-07-02
+
+### Added
+- **Modpack extract installs to instance** — extracted mods, resource packs, shaders, and overrides go into their folders; the `.mrpack` file is removed afterward
+- **Refresh button** on instance Mods, Resource Packs, and Shaders tabs to rescan for new files
+
+### Changed
+- **Import** section embedded at the bottom of the Instances page (sidebar Import item removed)
+- **Syncing** moved into Settings as a Sync tab (sidebar Syncing item removed)
+
 ## [5.2.16] - 2026-07-02
 
 ### Fixed

@@ -150,7 +150,7 @@ impl Page for SyncingPage {
 impl Render for SyncingPage {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let Some(sync_state) = &self.sync_state else {
-            let content = v_flex().size_full().p_3().gap_3()
+            let content = v_flex().w_full().p_3().gap_3()
                 .child(t::instance::sync::description())
                 .child(Spinner::new().with_size(gpui_component::Size::Large));
 
@@ -161,7 +161,7 @@ impl Render for SyncingPage {
 
         let warning = cx.theme().red;
         let info = cx.theme().blue;
-        let content = v_flex().size_full().p_3().gap_3()
+        let content = v_flex().w_full().p_3().gap_3()
             .child(t::instance::sync::description())
             .child(Button::new("open").info().icon(QuartzIcon::FolderOpen).label(t::instance::sync::open_folder()).on_click(move |_, window, cx| {
                 crate::open_folder(&sync_folder, window, cx);
