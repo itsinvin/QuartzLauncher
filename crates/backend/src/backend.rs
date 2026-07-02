@@ -228,6 +228,35 @@ impl CachedMinecraftProfile {
     }
 }
 
+pub struct ApplyModpackAffectedFolders {
+    pub resource_packs: bool,
+    pub shaders: bool,
+}
+
+fn should_override_modpack_file(path: &str, dest: &Path, new_sha1: [u8; 20], aux: &Option<AuxiliaryContentMeta>) -> bool {
+    let Some(aux) = aux else {
+        return true;
+    };
+    let Some(old_sha1) = aux.applied_overrides.filename_to_hash.get(path) else {
+        return true;
+    };
+
+    if path.starts_with("config/yosbr/") {
+        return !crate::check_sha1_hash(dest, new_sha1).unwrap_or(false);
+    }
+
+    let mut old_hash = [0u8; 20];
+    let Ok(_) = hex::decode_to_slice(&**old_sha1, &mut old_hash) else {
+        return true;
+    };
+
+    if let Ok(matches) = crate::check_sha1_hash(dest, old_hash) {
+        matches && old_hash != new_sha1
+    } else {
+        true
+    }
+}
+
 impl BackendState {
     async fn start(self, recv: BackendReceiver, watcher_rx: Receiver<notify_debouncer_full::DebounceEventResult>) {
         log::info!("Starting backend");
@@ -1218,35 +1247,6 @@ impl BackendState {
             overall.set_finished(ProgressTrackerFinishType::Normal);
             overall.notify();
             false
-        }
-    }
-
-    pub struct ApplyModpackAffectedFolders {
-        pub resource_packs: bool,
-        pub shaders: bool,
-    }
-
-    fn should_override_modpack_file(path: &str, dest: &Path, new_sha1: [u8; 20], aux: &Option<AuxiliaryContentMeta>) -> bool {
-        let Some(aux) = aux else {
-            return true;
-        };
-        let Some(old_sha1) = aux.applied_overrides.filename_to_hash.get(path) else {
-            return true;
-        };
-
-        if path.starts_with("config/yosbr/") {
-            return !crate::check_sha1_hash(dest, new_sha1).unwrap_or(false);
-        }
-
-        let mut old_hash = [0u8; 20];
-        let Ok(_) = hex::decode_to_slice(&**old_sha1, &mut old_hash) else {
-            return true;
-        };
-
-        if let Ok(matches) = crate::check_sha1_hash(dest, old_hash) {
-            matches && old_hash != new_sha1
-        } else {
-            true
         }
     }
 

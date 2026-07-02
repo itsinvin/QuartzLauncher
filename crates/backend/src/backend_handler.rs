@@ -438,7 +438,7 @@ impl BackendState {
                         summary,
                         configuration.loader,
                         configuration.minecraft_version,
-                        instance.dot_minecraft_folder.clone(),
+                        instance.dot_minecraft_path.clone(),
                         !instance.processes.is_empty(),
                     )
                 };
