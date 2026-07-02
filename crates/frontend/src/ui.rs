@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     component::{animation, menu::{MenuGroup, MenuGroupItem, MenuIndicator}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
         DataEntities, account::AccountExt, instance::{InstanceAddedEvent, InstanceEntries, InstanceModifiedEvent, InstanceMovedToTopEvent, InstanceRemovedEvent}
-    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage}, png_render_cache, MINECRAFT_FONT,
+    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
 };
 
 pub struct LauncherUI {
