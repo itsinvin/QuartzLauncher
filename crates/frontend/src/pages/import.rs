@@ -120,14 +120,14 @@ impl Render for ImportPage {
                      })
                 })
                 .child(Button::new("mrpack")
-                    .label("Import Modrinth Pack (.mrpack)")
+                    .label(t::import::modpack_file().into())
                     .w_full()
                     .on_click(cx.listener(|page, _, window, cx| {
                         let receiver = cx.prompt_for_paths(PathPromptOptions {
                             files: true,
                             directories: false,
                             multiple: false,
-                            prompt: Some("Select Modrinth Pack".into())
+                            prompt: Some(t::import::select_modpack_file().into())
                         });
                         let page_entity = cx.entity();
                         page._open_file_task = window.spawn(cx, async move |cx| {
@@ -147,6 +147,42 @@ impl Render for ImportPage {
                                 });
 
                                 crate::modals::generic::show_notification(window, cx, t::instance::content::install::error().into(), modal_action);
+                            });
+                        })
+                    })))
+                .child(Button::new("modpack-folder")
+                    .label(t::import::modpack_folder().into())
+                    .w_full()
+                    .on_click(cx.listener(|page, _, window, cx| {
+                        let receiver = cx.prompt_for_paths(PathPromptOptions {
+                            files: false,
+                            directories: true,
+                            multiple: false,
+                            prompt: Some(t::import::select_modpack_folder().into()),
+                        });
+                        let page_entity = cx.entity();
+                        page._open_file_task = window.spawn(cx, async move |cx| {
+                            let Ok(Ok(Some(result))) = receiver.await else {
+                                return;
+                            };
+                            let Some(path) = result.first() else {
+                                return;
+                            };
+                            _ = page_entity.update_in(cx, |page, window, cx| {
+                                let modal_action = ModalAction::default();
+
+                                page.backend_handle.send(MessageToBackend::CreateInstanceFromFolder {
+                                    folder: path.clone(),
+                                    modal_action: modal_action.clone(),
+                                });
+
+                                crate::modals::generic::show_modal(
+                                    window,
+                                    cx,
+                                    t::import::modpack_folder().into(),
+                                    t::instance::content::install::error().into(),
+                                    modal_action,
+                                );
                             });
                         })
                     })))

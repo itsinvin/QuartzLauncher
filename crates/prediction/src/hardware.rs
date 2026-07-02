@@ -2,7 +2,11 @@
 //!
 //! The scoring tables mirror `src/lib/prediction.ts` so native and browser modes agree.
 
+use std::sync::Mutex;
+
 use crate::models::{CpuInfo, GpuInfo, GpuTier, HardwareProfile, HardwareSource, StorageKind};
+
+static HARDWARE_CACHE: Mutex<Option<HardwareProfile>> = Mutex::new(None);
 
 fn clampf(v: f64, lo: f64, hi: f64) -> f64 {
     v.max(lo).min(hi)
@@ -363,6 +367,24 @@ fn detect_gpu_model() -> String {
     }
 
     "Unknown GPU".to_string()
+}
+
+/// Returns a cached hardware profile, detecting once per process unless refreshed.
+pub fn get_hardware_profile() -> HardwareProfile {
+    let mut cache = HARDWARE_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(profile) = cache.as_ref() {
+        return profile.clone();
+    }
+    let profile = detect_hardware();
+    *cache = Some(profile.clone());
+    profile
+}
+
+/// Forces a fresh hardware detection and updates the cache.
+pub fn refresh_hardware_profile() -> HardwareProfile {
+    let profile = detect_hardware();
+    *HARDWARE_CACHE.lock().unwrap_or_else(|e| e.into_inner()) = Some(profile.clone());
+    profile
 }
 
 /// Detect the real hardware profile using sysinfo + native GPU probing.

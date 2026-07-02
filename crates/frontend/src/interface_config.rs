@@ -82,6 +82,8 @@ pub struct InterfaceConfig {
     pub modrinth_favorites_only: bool,
     #[serde(default, deserialize_with = "schema::try_deserialize")]
     pub curseforge_favorites_only: bool,
+    #[serde(default, deserialize_with = "schema::try_deserialize")]
+    pub last_seen_release_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -261,6 +263,7 @@ impl Default for InterfaceConfig {
             curseforge_favorites: Default::default(),
             modrinth_favorites_only: Default::default(),
             curseforge_favorites_only: Default::default(),
+            last_seen_release_version: None,
         }
     }
 }

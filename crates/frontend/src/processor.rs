@@ -1,14 +1,16 @@
 use std::sync::{Arc, atomic::AtomicBool};
 
-use bridge::{instance::InstanceStatus, message::{BridgeNotificationType, MessageToFrontend}, quit::QuitCoordinator};
+use bridge::{instance::{InstanceID, InstanceStatus}, message::{BridgeNotificationType, MessageToFrontend}, quit::QuitCoordinator};
 use gpui::{AnyWindowHandle, App, AppContext, SharedString, TitlebarOptions, Window, WindowDecorations, WindowOptions, px, size};
 use gpui_component::{notification::{Notification, NotificationType}, Root, WindowExt};
+use rustc_hash::FxHashMap;
 
 use crate::{entity::{DataEntities, account::AccountEntries, instance::{ContentStates, InstanceEntries}, metadata::FrontendMetadata}, game_output::{GameOutput, GameOutputRoot}, interface_config::InterfaceConfig, root::LauncherRoot};
 
 pub struct Processor {
     data: DataEntities,
     main_window_handle: Option<AnyWindowHandle>,
+    game_output_windows: FxHashMap<InstanceID, AnyWindowHandle>,
     main_window_hidden: Arc<AtomicBool>,
     waiting_for_window: Vec<MessageToFrontend>,
     quit_coordinator: QuitCoordinator,
@@ -19,9 +21,27 @@ impl Processor {
         Self {
             data,
             main_window_handle: None,
+            game_output_windows: FxHashMap::default(),
             main_window_hidden,
             waiting_for_window: Vec::new(),
             quit_coordinator,
+        }
+    }
+
+    fn close_game_output_for_instance(&mut self, id: InstanceID, cx: &mut App) {
+        let Some(handle) = self.game_output_windows.remove(&id) else {
+            return;
+        };
+        _ = handle.update(cx, |_, window, _| {
+            window.remove_window();
+        });
+    }
+
+    fn sync_quit_coordinator(&self, cx: &App) {
+        if self.main_window_handle.is_some() || !self.game_output_windows.is_empty() {
+            self.quit_coordinator.set_can_quit(false);
+        } else {
+            self.quit_coordinator.set_can_quit(cx.windows().is_empty());
         }
     }
 
@@ -106,6 +126,9 @@ impl Processor {
                         }
                     }
                 } else if status == InstanceStatus::NotRunning {
+                    self.close_game_output_for_instance(id, cx);
+                    self.sync_quit_coordinator(cx);
+
                     if self.main_window_handle.is_none() && self.main_window_hidden.load(std::sync::atomic::Ordering::SeqCst) {
                         self.quit_coordinator.set_can_quit(false);
                         self.main_window_handle = Some(crate::open_main_window(&self.data, cx));
@@ -177,8 +200,10 @@ impl Processor {
                     window.close_all_dialogs(cx);
                 });
             },
-            MessageToFrontend::CreateGameOutputWindow { receiver } => {
+            MessageToFrontend::CreateGameOutputWindow { instance_id, receiver } => {
                 self.quit_coordinator.set_can_quit(false);
+                self.close_game_output_for_instance(instance_id, cx);
+
                 let options = WindowOptions {
                     app_id: Some("QuartzLauncher".into()),
                     window_min_size: Some(size(px(360.0), px(240.0))),
@@ -189,12 +214,13 @@ impl Processor {
                     window_decorations: Some(WindowDecorations::Server),
                     ..Default::default()
                 };
-                _ = cx.open_window(options, |window, cx| {
+                let handle = cx.open_window(options, |window, cx| {
                     let game_output = cx.new(|cx| GameOutput::new(receiver, cx));
                     let game_output_root = cx.new(|cx| GameOutputRoot::new(game_output.clone(), window, cx));
                     window.activate_window();
                     cx.new(|cx| Root::new(game_output_root, window, cx))
                 });
+                self.game_output_windows.insert(instance_id, handle);
             },
             MessageToFrontend::MoveInstanceToTop { id } => {
                 InstanceEntries::move_to_top(&self.data.instances, id, cx);

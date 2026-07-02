@@ -2,6 +2,32 @@
 
 Quartz Launcher is an enhanced fork of [PandoraLauncher](https://github.com/Moulberry/PandoraLauncher) — a modern, native Minecraft launcher built with Rust and GPUI. It keeps Pandora's full feature set and adds new tools on top.
 
+<!-- readme:build-info:start -->
+## Build info
+
+This section is updated automatically after every build.
+
+| | |
+|---|---|
+| **Version** | `5.2.20` |
+| **Last built** | 2026-07-02 07:41 UTC |
+| **Latest release** | [v5.2.20](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.20) |
+| **Commit** | `9a9c3392` |
+| **Changelog date** | 2026-07-02 |
+
+### Recent changes (5.2.20)
+
+- **Import modpack folder** — import Modrinth/CurseForge pack folders or extracted `.minecraft`-style directories as new instances
+- **What's new** screen on startup after updates
+- **Link manual mods** — connect manually installed mods to Modrinth or CurseForge for update checks
+- **README build info** — auto-updated version, build time, and changelog highlights after every CI/release build
+- **Game output window** closes automatically when the game exits
+- **Instance tabs** are cached after first visit (faster switching between Mods, Performance, etc.)
+- **Hardware detection** is cached globally; Performance tabs reuse it until you click Refresh
+- **Automatic launcher update checks** on startup and every 30 minutes
+
+<!-- readme:build-info:end -->
+
 ## Downloads
 
 Prebuilt releases are on [GitHub Releases](https://github.com/itsinvin/QuartzLauncher/releases).
@@ -37,7 +63,10 @@ Requires a recent Rust toolchain (edition 2024).
 
 ```bash
 cargo build --release
+python scripts/update_readme.py
 ```
+
+The README **Build info** section is refreshed automatically in CI and release builds (`scripts/update_readme.py`).
 
 Windows packaging: `scripts/build_windows.sh`
 

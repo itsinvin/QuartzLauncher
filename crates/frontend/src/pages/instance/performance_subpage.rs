@@ -1,7 +1,7 @@
 use bridge::instance::ContentFolder;
 use gpui::{prelude::*, *};
 use gpui_component::{ActiveTheme as _, Disableable, Sizable, StyledExt, button::Button, h_flex, input::{InputEvent, InputState, NumberInput}, spinner::Spinner, v_flex};
-use prediction::{detect_hardware, predict_performance, HardwareProfile, WorkloadProfile};
+use prediction::{get_hardware_profile, predict_performance, refresh_hardware_profile, HardwareProfile, WorkloadProfile};
 use schema::instance::InstanceMemoryConfiguration;
 
 use crate::{
@@ -47,14 +47,26 @@ impl InstancePerformanceSubpage {
             _detect_task: Task::ready(()),
             _input_subscription,
         };
-        page.refresh_hardware(cx);
+        page.load_cached_hardware(cx);
         page
     }
 
     fn refresh_hardware(&mut self, cx: &mut Context<Self>) {
         self.detecting = true;
         self._detect_task = cx.spawn(async move |page, cx| {
-            let hardware = detect_hardware();
+            let hardware = refresh_hardware_profile();
+            let _ = page.update(cx, |page, cx| {
+                page.hardware = Some(hardware);
+                page.detecting = false;
+                cx.notify();
+            });
+        });
+    }
+
+    fn load_cached_hardware(&mut self, cx: &mut Context<Self>) {
+        self.detecting = true;
+        self._detect_task = cx.spawn(async move |page, cx| {
+            let hardware = get_hardware_profile();
             let _ = page.update(cx, |page, cx| {
                 page.hardware = Some(hardware);
                 page.detecting = false;

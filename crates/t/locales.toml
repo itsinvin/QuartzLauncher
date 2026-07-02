@@ -1860,6 +1860,67 @@ en = "Installed manually - cannot automatically update"
 de = "Manuell installiert – kann nicht automatisch aktualisiert werden"
 hu = "Telepítés egyedileg - nem lehet autómatikusan frissíteni"
 sv = "Installera manuellt - kan inte automatiskt uppdatera"
+[instance.content.update.link_modrinth]
+en = "Link to Modrinth project for updates"
+de = "Mit Modrinth-Projekt verknüpfen für Updates"
+hu = "Modrinth projekthez kapcsolás a frissítésekhez"
+sv = "Länka till Modrinth-projekt för uppdateringar"
+[instance.content.update.link_curseforge]
+en = "Link to CurseForge project for updates"
+de = "Mit CurseForge-Projekt verknüpfen für Updates"
+hu = "CurseForge projekthez kapcsolás a frissítésekhez"
+sv = "Länka till CurseForge-projekt för uppdateringar"
+
+[whats_new.title]
+en = "What's new"
+de = "Neuigkeiten"
+hu = "Újdonságok"
+sv = "Nyheter"
+[whats_new.welcome]
+en = "Welcome to Quartz Launcher"
+de = "Willkommen bei Quartz Launcher"
+hu = "Üdv a Quartz Launcherben"
+sv = "Välkommen till Quartz Launcher"
+[whats_new.version]
+en = "Version ${version: &str}"
+de = "Version ${version: &str}"
+hu = "${version: &str} verzió"
+sv = "Version ${version: &str}"
+[whats_new.subtitle]
+en = "Here's what's new in this release:"
+de = "Das ist neu in dieser Version:"
+hu = "Az új verzióban:"
+sv = "Det här är nytt i den här versionen:"
+[whats_new.feature_extract]
+en = "Modpack extraction with progress log and install-to-folders"
+de = "Modpack-Extraktion mit Fortschrittsprotokoll und Ordner-Installation"
+hu = "Modpack kicsomagolás naplóval és mappákba telepítés"
+sv = "Modpack-extrahering med förloppslogg och installation i mappar"
+[whats_new.feature_performance]
+en = "Per-instance Performance tab with hardware-aware FPS estimates"
+de = "Performance-Tab pro Instanz mit hardwarebasierten FPS-Schätzungen"
+hu = "Példányonkénti teljesítmény fül hardver-alapú FPS becsléssel"
+sv = "Prestanda-flik per instans med hårdvarubaserade FPS-uppskattningar"
+[whats_new.feature_refresh]
+en = "Refresh button on Mods, Resource Packs, and Shaders tabs"
+de = "Aktualisieren-Button in Mods-, Resourcepacks- und Shader-Tabs"
+hu = "Frissítés gomb a Modok, Textúracsomagok és Shader füleken"
+sv = "Uppdatera-knapp på flikarna Mods, Resurspaket och Shaders"
+[whats_new.feature_import]
+en = "Import modpacks from folder (Modrinth, CurseForge, or extracted)"
+de = "Modpacks aus Ordner importieren (Modrinth, CurseForge oder extrahiert)"
+hu = "Modpack importálása mappából (Modrinth, CurseForge vagy kicsomagolt)"
+sv = "Importera modpacks från mapp (Modrinth, CurseForge eller extraherat)"
+[whats_new.feature_mod_link]
+en = "Link manually installed mods to Modrinth or CurseForge for updates"
+de = "Manuell installierte Mods mit Modrinth oder CurseForge für Updates verknüpfen"
+hu = "Kézi modok Modrinth/CurseForge projekthez kapcsolása frissítéshez"
+sv = "Länka manuellt installerade mods till Modrinth eller CurseForge för uppdateringar"
+[whats_new.feature_updates]
+en = "Automatic launcher update checks"
+de = "Automatische Launcher-Update-Prüfung"
+hu = "Automatikus launcher frissítés-ellenőrzés"
+sv = "Automatiska uppdateringskontroller för launchern"
 
 [instance.sync.label]
 en = "Syncing"
@@ -2262,6 +2323,26 @@ en = "Import the above selected from ${launcher: &str}"
 de = "Importiere das oben Ausgewählte von ${launcher: &str}"
 hu = "A fentiek közül kiválasztottak importálása innen: ${launcher: &str}"
 sv = "Importera det valda ovanstående från ${launcher: &str}"
+[import.modpack_file]
+en = "Import Modrinth Pack (.mrpack)"
+de = "Modrinth-Paket importieren (.mrpack)"
+hu = "Modrinth csomag importálása (.mrpack)"
+sv = "Importera Modrinth-paket (.mrpack)"
+[import.modpack_folder]
+en = "Import Modpack Folder"
+de = "Modpack-Ordner importieren"
+hu = "Modpack mappa importálása"
+sv = "Importera modpack-mapp"
+[import.select_modpack_file]
+en = "Select Modrinth Pack"
+de = "Modrinth-Paket auswählen"
+hu = "Modrinth csomag kiválasztása"
+sv = "Välj Modrinth-paket"
+[import.select_modpack_folder]
+en = "Select Modpack Folder"
+de = "Modpack-Ordner auswählen"
+hu = "Modpack mappa kiválasztása"
+sv = "Välj modpack-mapp"
 
 [tools.title]
 en = "Tools"

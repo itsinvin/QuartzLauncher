@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 
-use bridge::instance::{InstanceID, InstanceStatus};
+use bridge::{instance::{InstanceID, InstanceStatus}, message::MessageToBackend};
 use gpui::{prelude::*, *};
 use gpui_component::{
     ActiveTheme as _, InteractiveElementExt, WindowExt, h_flex, notification::{Notification, NotificationType}, scroll::ScrollableElement, tooltip::Tooltip, v_flex
@@ -26,6 +26,8 @@ pub struct LauncherUI {
     previous_pages: FxHashMap<PageType, LauncherPage>,
     pending_page: Option<(PageType, Arc<[PageType]>)>,
     page_opacity: f32,
+    show_whats_new: bool,
+    pending_launcher_update_check: bool,
     _instance_added_subscription: Subscription,
     _instance_modified_subscription: Subscription,
     _instance_removed_subscription: Subscription,
@@ -256,6 +258,8 @@ impl LauncherUI {
             previous_pages: FxHashMap::default(),
             pending_page,
             page_opacity: 1.0,
+            show_whats_new: modals::whats_new::should_show(cx),
+            pending_launcher_update_check: true,
             _instance_added_subscription,
             _instance_modified_subscription,
             _instance_removed_subscription,
@@ -427,6 +431,18 @@ impl LauncherUI {
 
 impl Render for LauncherUI {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.show_whats_new {
+            self.show_whats_new = false;
+            window.defer(cx, |window, cx| {
+                modals::whats_new::open(window, cx);
+            });
+        }
+
+        if self.pending_launcher_update_check {
+            self.pending_launcher_update_check = false;
+            self.data.backend_handle.send(MessageToBackend::CheckLauncherUpdate);
+        }
+
         if let Some(pending_page) = self.pending_page.clone() {
             if let Ok(page) = Self::create_page(&self.data, pending_page.0.clone(), window, cx) {
                 self.pending_page = None;

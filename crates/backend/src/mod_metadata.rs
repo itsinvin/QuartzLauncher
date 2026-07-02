@@ -21,6 +21,12 @@ pub enum ContentUpdateAction {
     ErrorInvalidHash,
     AlreadyUpToDate,
     ManualInstall,
+    LinkModrinth {
+        project_id: Arc<str>,
+    },
+    LinkCurseforge {
+        project_id: u32,
+    },
     Modrinth {
         file: ModrinthFile,
         project_id: Arc<str>,
@@ -38,6 +44,8 @@ impl ContentUpdateAction {
             ContentUpdateAction::ErrorInvalidHash => ContentUpdateStatus::ErrorInvalidHash,
             ContentUpdateAction::AlreadyUpToDate => ContentUpdateStatus::AlreadyUpToDate,
             ContentUpdateAction::ManualInstall => ContentUpdateStatus::ManualInstall,
+            ContentUpdateAction::LinkModrinth { .. } => ContentUpdateStatus::LinkModrinth,
+            ContentUpdateAction::LinkCurseforge { .. } => ContentUpdateStatus::LinkCurseforge,
             ContentUpdateAction::Modrinth { .. } => ContentUpdateStatus::Modrinth,
             ContentUpdateAction::Curseforge { .. } => ContentUpdateStatus::Curseforge,
         }
@@ -960,6 +968,318 @@ impl ModMetadataManager {
             png_icon,
             extra: ContentType::ResourcePack
         }))
+    }
+
+    pub fn load_modrinth_modpack_from_folder(self: &Arc<Self>, folder: &Path) -> Option<Arc<ContentSummary>> {
+        let index_path = folder.join("modrinth.index.json");
+        let index_bytes = std::fs::read(&index_path).inspect_err(|e| {
+            log::error!("Error reading modrinth.index.json: {e}");
+        }).ok()?;
+        let modrinth_index_json: ModrinthIndexJson = serde_json::from_slice(&index_bytes).inspect_err(|e| {
+            log::error!("Error parsing modrinth.index.json: {e}");
+        }).ok()?;
+
+        let mut hasher = Sha1::new();
+        hasher.update(&index_bytes);
+        let hash: [u8; 20] = hasher.finalize().into();
+        let filesize = index_bytes.len() as u64;
+
+        let mut overrides = collect_modpack_overrides_from_folder(folder);
+
+        let mut modpack_files = Vec::new();
+        for (mut path, bytes) in overrides.drain(..) {
+            let default_disabled = if let Some(stripped) = path.strip_extension("disabled") {
+                path = stripped;
+                true
+            } else {
+                false
+            };
+
+            let (hash, summary) = self.load_child_content_summary_from_bytes(&bytes, path.extension().map(OsStr::new));
+
+            modpack_files.push(ModpackFile {
+                source: ModpackFileSource::Builtin { bytes },
+                path: ModpackFilePath::Path(path),
+                hash,
+                default_disabled,
+                summary: Some(summary),
+                disabled_third_party_downloads: false,
+            });
+        }
+
+        let summaries = modrinth_index_json.files.par_iter().flat_map(|download| {
+            if let Some(env) = download.env {
+                if env.client == ModrinthSideRequirement::Unsupported {
+                    return None;
+                }
+            }
+
+            let Some(mut path) = SafePath::new(&download.path) else {
+                log::warn!("Skipping file because of invalid path: {}", download.path);
+                return None;
+            };
+
+            let Some(first_download) = download.downloads.first() else {
+                log::warn!("Skipping file {} because it has no downloads", download.path);
+                return None;
+            };
+
+            let mut file_hash = [0u8; 20];
+            let Ok(_) = hex::decode_to_slice(&*download.hashes.sha1, &mut file_hash) else {
+                log::warn!("Skipping file {} because of invalid sha1 hash: {}", download.path, download.hashes.sha1);
+                return None;
+            };
+
+            let default_disabled = if let Some(stripped) = path.strip_extension("disabled") {
+                path = stripped;
+                true
+            } else {
+                false
+            };
+
+            let summary = if let Some(cached) = self.by_hash.read().get(&file_hash).cloned() {
+                Some(cached)
+            } else {
+                let content_path = crate::create_content_library_path(&self.content_library_dir, file_hash, path.extension());
+
+                if let Ok(mut file) = std::fs::File::open(&content_path) {
+                    let filesize = file.metadata().ok().as_ref().map(std::fs::Metadata::len);
+                    let summary = self.load_mod_summary(file_hash, filesize, &mut file, content_path.extension(), false);
+                    self.put(file_hash, summary.clone());
+                    Some(summary)
+                } else {
+                    self.parents_by_missing_child.write().entry(file_hash).or_default().insert(hash);
+                    None
+                }
+            };
+
+            Some(ModpackFile {
+                source: ModpackFileSource::DownloadUrl {
+                    url: first_download.clone(),
+                    size: download.file_size
+                },
+                path: ModpackFilePath::Path(path),
+                hash: file_hash,
+                summary,
+                default_disabled,
+                disabled_third_party_downloads: false,
+            })
+        });
+
+        modpack_files.par_extend(summaries);
+
+        let mut png_icon = None;
+        let icon_path = folder.join("icon.png");
+        if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+            png_icon = load_icon_bytes(&icon_bytes);
+        }
+
+        let authors = if let Some(authors) = modrinth_index_json.authors && let Some(authors) = create_authors_string(&authors) {
+            authors.into()
+        } else if let Some(author) = modrinth_index_json.author {
+            format!("By {}", author.name()).into()
+        } else {
+            "".into()
+        };
+
+        let summary = Arc::new(ContentSummary {
+            id: None,
+            hash,
+            filesize: Some(filesize),
+            name: Some(modrinth_index_json.name),
+            authors,
+            version_str: create_version_string(&modrinth_index_json.version_id),
+            rich_description: None,
+            png_icon,
+            extra: ContentType::ModrinthModpack {
+                files: modpack_files.into(),
+                dependencies: modrinth_index_json.dependencies,
+            }
+        });
+        self.put(hash, summary.clone());
+        Some(summary)
+    }
+
+    pub fn load_curseforge_modpack_from_folder(self: &Arc<Self>, folder: &Path) -> Option<Arc<ContentSummary>> {
+        let manifest_path = folder.join("manifest.json");
+        let manifest_bytes = std::fs::read(&manifest_path).inspect_err(|e| {
+            log::error!("Error reading manifest.json: {e}");
+        }).ok()?;
+        let manifest_json: CurseforgeModpackManifestJson = serde_json::from_slice(&manifest_bytes).inspect_err(|e| {
+            log::error!("Error parsing manifest.json: {e}");
+        }).ok()?;
+
+        let mut hasher = Sha1::new();
+        hasher.update(&manifest_bytes);
+        let hash: [u8; 20] = hasher.finalize().into();
+        let filesize = manifest_bytes.len() as u64;
+
+        let overrides_prefix = manifest_json.overrides.as_deref().unwrap_or("overrides");
+        let mut overrides = collect_modpack_overrides_from_folder_with_prefix(folder, overrides_prefix);
+
+        let mut modpack_files = Vec::new();
+        for (mut path, bytes) in overrides.drain(..) {
+            let default_disabled = if let Some(stripped) = path.strip_extension("disabled") {
+                path = stripped;
+                true
+            } else {
+                false
+            };
+
+            let (hash, summary) = self.load_child_content_summary_from_bytes(&bytes, path.extension().map(OsStr::new));
+
+            modpack_files.push(ModpackFile {
+                source: ModpackFileSource::Builtin { bytes },
+                path: ModpackFilePath::Path(path),
+                hash,
+                default_disabled,
+                summary: Some(summary),
+                disabled_third_party_downloads: false,
+            });
+        }
+
+        let mut unknown_files = Vec::new();
+        let mut known_files = Vec::new();
+
+        for file in manifest_json.files.iter() {
+            if let Some(cached_info) = self.cached_curseforge_info.read().get(&file.file_id).cloned() {
+                known_files.push((file, cached_info));
+            } else {
+                unknown_files.push(file.clone());
+                self.parents_by_missing_curseforge_id.write().entry(file.file_id).or_default().insert(hash);
+            }
+        }
+
+        let summaries = known_files.par_iter().flat_map(|(curseforge_file, cached_info)| {
+            let Some(mut filename) = SafePath::new(&cached_info.filename) else {
+                log::warn!("Skipping file because of invalid filename: {}", cached_info.filename);
+                return None;
+            };
+
+            let default_disabled = if let Some(stripped) = filename.strip_extension("disabled") {
+                filename = stripped;
+                true
+            } else {
+                false
+            };
+
+            let summary = if let Some(cached) = self.by_hash.read().get(&cached_info.hash).cloned() {
+                Some(cached)
+            } else {
+                let content_path = crate::create_content_library_path(&self.content_library_dir, cached_info.hash, filename.extension());
+
+                if let Ok(mut file) = std::fs::File::open(&content_path) {
+                    let filesize = file.metadata().ok().as_ref().map(std::fs::Metadata::len);
+                    let summary = self.load_mod_summary(cached_info.hash, filesize, &mut file, content_path.extension(), false);
+                    self.put(cached_info.hash, summary.clone());
+                    Some(summary)
+                } else {
+                    self.parents_by_missing_child.write().entry(cached_info.hash).or_default().insert(hash);
+                    None
+                }
+            };
+
+            Some(ModpackFile {
+                source: ModpackFileSource::DownloadCurseforge { file_id: curseforge_file.file_id },
+                path: ModpackFilePath::Filename(filename),
+                hash: cached_info.hash,
+                summary,
+                default_disabled,
+                disabled_third_party_downloads: cached_info.disabled_third_party_downloads
+            })
+        });
+
+        modpack_files.par_extend(summaries);
+
+        let mut png_icon = None;
+        let icon_path = folder.join("icon.png");
+        if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+            png_icon = load_icon_bytes(&icon_bytes);
+        }
+
+        let authors = if let Some(author) = manifest_json.author {
+            format!("By {}", author).into()
+        } else {
+            "".into()
+        };
+
+        let summary = Arc::new(ContentSummary {
+            id: None,
+            hash,
+            filesize: Some(filesize),
+            name: manifest_json.name,
+            authors,
+            version_str: create_version_string(&manifest_json.version),
+            rich_description: None,
+            png_icon,
+            extra: ContentType::CurseforgeModpack {
+                unknown_files: unknown_files.into(),
+                files: modpack_files.into(),
+                minecraft: manifest_json.minecraft,
+            }
+        });
+        self.put(hash, summary.clone());
+        Some(summary)
+    }
+}
+
+
+fn collect_modpack_overrides_from_folder(folder: &Path) -> IndexMap<SafePath, Arc<[u8]>> {
+    let mut overrides: IndexMap<SafePath, Arc<[u8]>> = IndexMap::new();
+
+    for prefix in ["overrides", "client-overrides"] {
+        let prioritize = prefix == "client-overrides";
+        let prefix_path = folder.join(prefix);
+        if !prefix_path.is_dir() {
+            continue;
+        }
+        collect_modpack_overrides_from_dir(&prefix_path, &prefix_path, &mut overrides, prioritize);
+    }
+
+    overrides
+}
+
+fn collect_modpack_overrides_from_folder_with_prefix(folder: &Path, prefix: &str) -> IndexMap<SafePath, Arc<[u8]>> {
+    let mut overrides: IndexMap<SafePath, Arc<[u8]>> = IndexMap::new();
+    let prefix_path = folder.join(prefix);
+    if prefix_path.is_dir() {
+        collect_modpack_overrides_from_dir(&prefix_path, &prefix_path, &mut overrides, true);
+    }
+    overrides
+}
+
+fn collect_modpack_overrides_from_dir(
+    dir: &Path,
+    base: &Path,
+    overrides: &mut IndexMap<SafePath, Arc<[u8]>>,
+    prioritize: bool,
+) {
+    let Ok(read_dir) = std::fs::read_dir(dir) else {
+        return;
+    };
+
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let Some(relative) = path.strip_prefix(base).ok() else {
+            continue;
+        };
+        let Some(safe_path) = SafePath::new(relative) else {
+            continue;
+        };
+
+        if path.is_dir() {
+            collect_modpack_overrides_from_dir(&path, base, overrides, prioritize);
+            continue;
+        }
+
+        if !prioritize && overrides.contains_key(&safe_path) {
+            continue;
+        }
+
+        let Ok(bytes) = std::fs::read(&path) else {
+            continue;
+        };
+        overrides.insert(safe_path, bytes.into());
     }
 }
 

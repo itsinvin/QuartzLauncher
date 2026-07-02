@@ -4,7 +4,7 @@ use gpui_component::{
     h_flex, input::{InputEvent, InputState, NumberInput}, spinner::Spinner, v_flex,
 };
 use prediction::{
-    detect_hardware, predict_performance, Bottleneck, HardwareProfile, PerfRating, PerformancePrediction,
+    get_hardware_profile, predict_performance, refresh_hardware_profile, Bottleneck, HardwareProfile, PerfRating, PerformancePrediction,
     WorkloadProfile,
 };
 
@@ -62,14 +62,27 @@ impl PerformancePage {
             _input_subscriptions,
         };
 
-        page.refresh_hardware(cx);
+        page.load_cached_hardware(cx);
         page
+    }
+
+    fn load_cached_hardware(&mut self, cx: &mut Context<Self>) {
+        self.detecting = true;
+        self._detect_task = cx.spawn(async move |page, cx| {
+            let hardware = get_hardware_profile();
+            let _ = page.update(cx, |page, cx| {
+                page.hardware = Some(hardware);
+                page.detecting = false;
+                page.update_prediction(cx);
+                cx.notify();
+            });
+        });
     }
 
     fn refresh_hardware(&mut self, cx: &mut Context<Self>) {
         self.detecting = true;
         self._detect_task = cx.spawn(async move |page, cx| {
-            let hardware = detect_hardware();
+            let hardware = refresh_hardware_profile();
             let _ = page.update(cx, |page, cx| {
                 page.hardware = Some(hardware);
                 page.detecting = false;

@@ -8,3 +8,4 @@ pub mod modrinth_install;
 pub mod select_icon;
 pub mod settings;
 pub mod update_prompt;
+pub mod whats_new;

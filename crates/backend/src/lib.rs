@@ -27,6 +27,7 @@ mod lockfile;
 mod log_reader;
 mod metadata;
 mod mod_metadata;
+mod modpack_folder_import;
 mod id_slab;
 mod persistent;
 mod server_list_pinger;

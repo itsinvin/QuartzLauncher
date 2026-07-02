@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: windows-latest
@@ -19,3 +22,12 @@ jobs:
 
       - name: cargo check
         run: cargo check --release -p quartz_launcher
+
+      - name: Update README build info
+        shell: bash
+        run: python scripts/update_readme.py
+
+      - name: Commit README on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: bash ./scripts/commit_readme_if_changed.sh

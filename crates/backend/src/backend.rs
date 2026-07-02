@@ -263,6 +263,17 @@ impl BackendState {
 
         tokio::task::spawn(crate::update::check_for_updates(self.redirecting_http_client.clone(), self.send.clone()));
 
+        let client = self.redirecting_http_client.clone();
+        let send = self.send.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30 * 60));
+            interval.tick().await;
+            loop {
+                interval.tick().await;
+                crate::update::check_for_updates(client.clone(), send.clone()).await;
+            }
+        });
+
         // Pre-fetch version manifest
         self.meta.load(&MinecraftVersionManifestMetadataItem).await;
 
@@ -1256,12 +1267,29 @@ impl BackendState {
         dot_minecraft_dir: &Path,
         modal_action: &ModalAction,
     ) -> ApplyModpackAffectedFolders {
+        let content_summary = self.mod_metadata_manager.get_path(&summary.path);
+        self.apply_modpack_content_summary_to_instance(
+            &content_summary,
+            dot_minecraft_dir,
+            modal_action,
+            Some(&summary.disabled_children),
+            crate::pandora_aux_path_for_content(summary),
+        )
+    }
+
+    pub fn apply_modpack_content_summary_to_instance(
+        self: &Arc<Self>,
+        content_summary: &ContentSummary,
+        dot_minecraft_dir: &Path,
+        modal_action: &ModalAction,
+        disabled_children: Option<&schema::auxiliary::AuxDisabledChildren>,
+        aux_path: Option<PathBuf>,
+    ) -> ApplyModpackAffectedFolders {
         let mut affected = ApplyModpackAffectedFolders {
             resource_packs: false,
             shaders: false,
         };
 
-        let content_summary = self.mod_metadata_manager.get_path(&summary.path);
         let files = match &content_summary.extra {
             ContentType::ModrinthModpack { files, .. } => files,
             ContentType::CurseforgeModpack { files, .. } => files,
@@ -1270,6 +1298,9 @@ impl BackendState {
                 return affected;
             },
         };
+
+        let default_disabled = schema::auxiliary::AuxDisabledChildren::default();
+        let disabled_children = disabled_children.unwrap_or(&default_disabled);
 
         let filtered_files = files.iter().filter(|file| {
             let mut id = None;
@@ -1280,7 +1311,7 @@ impl BackendState {
                 name = content_summary.name.as_ref().map(|s| &**s);
             }
 
-            summary.disabled_children.is_enabled(file.default_disabled, id, name, file.path.as_str())
+            disabled_children.is_enabled(file.default_disabled, id, name, file.path.as_str())
         }).cloned().collect::<Vec<_>>();
 
         if filtered_files.is_empty() {
@@ -1296,9 +1327,8 @@ impl BackendState {
         tracker.notify();
 
         let content_library_dir = &self.directories.content_library_dir;
-        let mut aux: Option<AuxiliaryContentMeta> = crate::pandora_aux_path_for_content(summary)
-            .and_then(|aux_path| crate::read_json(&aux_path).ok());
-        let aux_path = crate::pandora_aux_path_for_content(summary);
+        let mut aux: Option<AuxiliaryContentMeta> = aux_path.as_ref()
+            .and_then(|aux_path| crate::read_json(aux_path).ok());
         let mut aux_changed = false;
 
         for file in filtered_files {
