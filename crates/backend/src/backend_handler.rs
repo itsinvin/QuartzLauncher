@@ -432,14 +432,13 @@ impl BackendState {
                 };
 
                 let this = self.clone();
-                let id = *id;
                 tokio::spawn(async move {
                     this.download_modpack_children(&summary, loader, minecraft_version, &modal_action).await;
 
                     if let Some(instance) = this.instance_state.write().instances.get_mut(id) {
                         let mut changes = FolderChanges::no_changes();
                         changes.dirty_path(summary.path);
-                        instance.mark_content_dirty(this.as_ref(), ContentFolder::Mods, changes, true);
+                        instance.mark_content_dirty(&this, ContentFolder::Mods, changes, true);
                     }
 
                     modal_action.append_log("Modpack extraction complete.", &this.send);
