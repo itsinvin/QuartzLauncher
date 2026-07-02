@@ -9,15 +9,15 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.29` |
-| **Last built** | 2026-07-02 10:11 UTC |
-| **Latest release** | [v5.2.29](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.29) |
-| **Commit** | `dfd0a714` |
+| **Version** | `5.2.33` |
+| **Last built** | 2026-07-02 21:01 UTC |
+| **Latest release** | [v5.2.33](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.33) |
+| **Commit** | `e9f96fe9` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.29)
+### Recent changes (5.2.33)
 
-- Missing `IntoElement` import in refresh icon animation helper
+- CI release build failure (`gpui-component` vendoring lockfile conflict)
 
 <!-- readme:build-info:end -->
 
