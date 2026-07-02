@@ -9,15 +9,17 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.33` |
-| **Last built** | 2026-07-02 21:16 UTC |
-| **Latest release** | [v5.2.33](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.33) |
-| **Commit** | `e9f96fe9` |
+| **Version** | `5.2.34` |
+| **Last built** | 2026-07-02 22:51 UTC |
+| **Latest release** | [v5.2.34](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.34) |
+| **Commit** | `75cbb5f4` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.33)
+### Recent changes (5.2.34)
 
-- CI release build failure (`gpui-component` vendoring lockfile conflict)
+- Separate Favorite mods and Recommended mods sections on the home page
+- Mod recommendation algorithm based on your loader, Minecraft version, and installed mods
+- Recent skins grid beside the home page player preview
 
 <!-- readme:build-info:end -->
 
