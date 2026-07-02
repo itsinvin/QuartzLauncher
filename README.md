@@ -9,17 +9,17 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.34` |
-| **Last built** | 2026-07-02 23:06 UTC |
-| **Latest release** | [v5.2.34](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.34) |
-| **Commit** | `3cb11134` |
+| **Version** | `5.2.36` |
+| **Last built** | 2026-07-02 23:24 UTC |
+| **Latest release** | [v5.2.36](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.36) |
+| **Commit** | `a8d402dd` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.34)
+### Recent changes (5.2.36)
 
-- Separate Favorite mods and Recommended mods sections on the home page
-- Mod recommendation algorithm based on your loader, Minecraft version, and installed mods
-- Recent skins grid beside the home page player preview
+- Remove installed mods from Modrinth/CurseForge browse pages when adding to an instance
+- Pre-launch conflict detection on Mods, Resource Packs, and Shaders tabs (duplicate IDs, projects, files, names, loader mismatches)
+- Mixin conflict detection for Fabric mods (multiple mods targeting the same class)
 
 <!-- readme:build-info:end -->
 
