@@ -214,13 +214,14 @@ impl Processor {
                     window_decorations: Some(WindowDecorations::Server),
                     ..Default::default()
                 };
-                let handle = cx.open_window(options, |window, cx| {
+                if let Ok(handle) = cx.open_window(options, |window, cx| {
                     let game_output = cx.new(|cx| GameOutput::new(receiver, cx));
                     let game_output_root = cx.new(|cx| GameOutputRoot::new(game_output.clone(), window, cx));
                     window.activate_window();
                     cx.new(|cx| Root::new(game_output_root, window, cx))
-                });
-                self.game_output_windows.insert(instance_id, handle);
+                }) {
+                    self.game_output_windows.insert(instance_id, handle.into());
+                }
             },
             MessageToFrontend::MoveInstanceToTop { id } => {
                 InstanceEntries::move_to_top(&self.data.instances, id, cx);

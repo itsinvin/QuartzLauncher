@@ -9,22 +9,15 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.20` |
-| **Last built** | 2026-07-02 07:41 UTC |
-| **Latest release** | [v5.2.20](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.20) |
-| **Commit** | `9a9c3392` |
+| **Version** | `5.2.21` |
+| **Last built** | 2026-07-02 07:55 UTC |
+| **Latest release** | [v5.2.21](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.21) |
+| **Commit** | `d6e33599` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.20)
+### Recent changes (5.2.21)
 
-- **Import modpack folder** — import Modrinth/CurseForge pack folders or extracted `.minecraft`-style directories as new instances
-- **What's new** screen on startup after updates
-- **Link manual mods** — connect manually installed mods to Modrinth or CurseForge for update checks
-- **README build info** — auto-updated version, build time, and changelog highlights after every CI/release build
-- **Game output window** closes automatically when the game exits
-- **Instance tabs** are cached after first visit (faster switching between Mods, Performance, etc.)
-- **Hardware detection** is cached globally; Performance tabs reuse it until you click Refresh
-- **Automatic launcher update checks** on startup and every 30 minutes
+- CI compile errors in modpack folder import, game output window handle, and import page labels
 
 <!-- readme:build-info:end -->
 

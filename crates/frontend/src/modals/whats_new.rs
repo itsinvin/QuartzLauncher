@@ -17,7 +17,7 @@ pub fn open(window: &mut Window, cx: &mut App) {
         return;
     };
 
-    window.open_dialog(cx, move |dialog, window, cx| {
+    window.open_dialog(cx, move |dialog, _window, cx| {
         dialog
             .title(t::whats_new::title())
             .overlay_closable(false)
