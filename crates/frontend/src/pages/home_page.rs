@@ -585,7 +585,7 @@ impl HomePage {
             recommendations.push(RecommendationCard {
                 title: favorite.title.clone().into(),
                 subtitle: favorite.author.clone().into(),
-                thumbnail: favorite.icon_url.as_deref().map(SharedString::from),
+                thumbnail: favorite.icon_url.map(SharedString::from),
                 page: PageType::ModrinthProject {
                     project_id: favorite.project_id.clone().into(),
                     project_title: favorite.title.clone().into(),
@@ -601,7 +601,7 @@ impl HomePage {
             recommendations.push(RecommendationCard {
                 title: favorite.name.clone().into(),
                 subtitle: favorite.summary.clone().into(),
-                thumbnail: favorite.thumbnail_url.as_deref().map(SharedString::from),
+                thumbnail: favorite.thumbnail_url.map(SharedString::from),
                 page: PageType::Curseforge { installing_for: None },
             });
         }

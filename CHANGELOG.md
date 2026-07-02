@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.28] - 2026-07-02
+
+### Fixed
+- Refresh icon helper return type and favorite thumbnail lifetimes on Home page
+
 ## [5.2.27] - 2026-07-02
 
 ### Fixed

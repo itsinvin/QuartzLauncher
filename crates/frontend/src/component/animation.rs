@@ -87,7 +87,7 @@ pub fn format_playtime(total_secs: u64) -> SharedString {
     }
 }
 
-pub fn refresh_icon(generation: u64) -> Icon {
+pub fn refresh_icon(generation: u64) -> impl IntoElement {
     Icon::new(QuartzIcon::RefreshCcw)
         .with_animation(
             ("content-refresh", generation),
