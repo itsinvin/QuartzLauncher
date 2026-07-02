@@ -9,15 +9,15 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.21` |
-| **Last built** | 2026-07-02 07:55 UTC |
-| **Latest release** | [v5.2.21](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.21) |
-| **Commit** | `d6e33599` |
+| **Version** | `5.2.22` |
+| **Last built** | 2026-07-02 08:19 UTC |
+| **Latest release** | [v5.2.22](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.22) |
+| **Commit** | `8240f2aa` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.21)
+### Recent changes (5.2.22)
 
-- CI compile errors in modpack folder import, game output window handle, and import page labels
+- CD workflow no longer fails the release when README auto-update cannot push to `main`
 
 <!-- readme:build-info:end -->
 

@@ -35,7 +35,14 @@ jobs:
         run: bash ./scripts/build_windows.sh ${{ github.ref_name }}
         shell: bash
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-Windows-x86_64
+          path: dist/*
+
       - name: Push README build info to main
+        continue-on-error: true
         shell: bash
         run: |
           if git diff --quiet -- README.md; then
@@ -44,19 +51,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp README.md /tmp/README.md.build
+          git stash push -- README.md
           git fetch origin main
           git checkout main
           git pull --rebase origin main
           cp /tmp/README.md.build README.md
           git add README.md
-          git commit -m "docs: update README build info for ${{ github.ref_name }}"
+          git diff --staged --quiet || git commit -m "docs: update README build info for ${{ github.ref_name }}"
           git push origin main
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-Windows-x86_64
-          path: dist/*
 
   release:
     needs: [build]
