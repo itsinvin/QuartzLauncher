@@ -1,3 +1,4 @@
+use bridge::{
     handle::BackendHandle,
     instance::{ContentFolder, InstanceStatus},
     message::{AccountSkinResult, MessageToBackend},
