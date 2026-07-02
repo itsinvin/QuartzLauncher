@@ -1,3 +1,4 @@
+pub mod home_page;
 pub mod instance;
 pub mod import;
 pub mod instances_page;

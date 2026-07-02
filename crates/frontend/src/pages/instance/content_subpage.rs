@@ -23,6 +23,7 @@ pub struct InstanceContentSubpage {
     content_list: Entity<ListState<ContentListDelegate>>,
     content: Entity<Arc<[InstanceContentSummary]>>,
     sort_dropdown: Entity<SelectState<NamedDropdown<InstanceContentSortKey>>>,
+    refresh_generation: u64,
     _add_from_file_task: Option<Task<()>>,
 }
 
@@ -31,6 +32,16 @@ pub enum ContentType {
     Mods,
     ResourcePacks,
     Shaders,
+}
+
+impl From<ContentType> for u8 {
+    fn from(value: ContentType) -> Self {
+        match value {
+            ContentType::Mods => 0,
+            ContentType::ResourcePacks => 1,
+            ContentType::Shaders => 2,
+        }
+    }
 }
 
 impl ContentType {
@@ -209,6 +220,7 @@ impl InstanceContentSubpage {
             content_list,
             content,
             sort_dropdown,
+            refresh_generation: 0,
             _add_from_file_task: None,
         }
     }
@@ -248,14 +260,32 @@ impl Render for InstanceContentSubpage {
             .border_color(theme.border)
             .bg(theme.sidebar)
             .child(div().text_xl().line_height(relative(1.35)).child(self.content_type.title()))
-            .child(Button::new("refresh").label(t::instance::content::refresh()).icon(QuartzIcon::RefreshCcw).compact().small().on_click({
-                let backend_handle = self.backend_handle.clone();
-                let instance_id = self.instance;
-                let content_folder = self.content_type.content_folder();
-                move |_, _, _| {
-                    backend_handle.send(MessageToBackend::ReloadContentFolder { id: instance_id, content_folder });
-                }
-            }))
+            .child({
+                let refresh_generation = self.refresh_generation;
+                div()
+                    .id(("refresh", u8::from(self.content_type)))
+                    .cursor_pointer()
+                    .flex()
+                    .flex_row()
+                    .items_center()
+                    .px_2()
+                    .py_1()
+                    .rounded(theme.radius)
+                    .border_1()
+                    .border_color(theme.border)
+                    .hover(|this| this.bg(theme.list_hover))
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.refresh_generation = this.refresh_generation.wrapping_add(1);
+                        this.backend_handle.send(MessageToBackend::ReloadContentFolder {
+                            id: this.instance,
+                            content_folder: this.content_type.content_folder(),
+                        });
+                        cx.notify();
+                    }))
+                    .child(h_flex().gap_1p5().items_center()
+                        .child(crate::component::animation::refresh_icon(refresh_generation))
+                        .child(div().text_sm().child(t::instance::content::refresh())))
+            })
             .child(Button::new("update").label(t::instance::content::update::check::label(false)).success().compact().small().on_click({
                 let backend_handle = self.backend_handle.clone();
                 let instance_id = self.instance;

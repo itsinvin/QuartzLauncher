@@ -1,4 +1,9 @@
-use gpui::{App, Window};
+use std::time::Duration;
+
+use gpui::{percentage, prelude::FluentBuilder as _, Animation, AnimationExt as _, App, SharedString, Transformation, Window};
+use gpui_component::Icon;
+
+use crate::icon::QuartzIcon;
 
 #[inline]
 pub fn ease_out_cubic(t: f32) -> f32 {
@@ -67,4 +72,26 @@ pub fn animated_logo_scale(window: &mut Window, cx: &mut App) -> f32 {
     });
 
     scale
+}
+
+pub fn format_playtime(total_secs: u64) -> SharedString {
+    let hours = total_secs / 3600;
+    let minutes = (total_secs % 3600) / 60;
+    let seconds = total_secs % 60;
+    if hours > 0 {
+        format!("{hours}h {minutes}m").into()
+    } else if minutes > 0 {
+        format!("{minutes}m {seconds}s").into()
+    } else {
+        format!("{seconds}s").into()
+    }
+}
+
+pub fn refresh_icon(generation: u64) -> Icon {
+    Icon::new(QuartzIcon::RefreshCcw)
+        .with_animation(
+            ("content-refresh", generation),
+            Animation::new(Duration::from_millis(650)).with_easing(ease_out_cubic),
+            |icon, delta| icon.transform(Transformation::rotate(percentage(delta))),
+        )
 }

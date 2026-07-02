@@ -12,7 +12,7 @@ use gpui_component::{
 };
 
 use crate::{
-    entity::instance::InstanceEntry, icon::QuartzIcon, interface_config::InterfaceConfig, png_render_cache, root,
+    component::animation, entity::instance::InstanceEntry, icon::QuartzIcon, interface_config::InterfaceConfig, png_render_cache, root,
 };
 
 pub struct InstanceQuickplaySubpage {
@@ -125,9 +125,9 @@ impl Render for InstanceQuickplaySubpage {
 
         let worlds_header = div().mb_1().ml_1().text_lg().child(t::instance::worlds());
         let servers_header = div().mb_1().ml_1().text_lg().child(t::instance::servers());
-        let total_playtime = format_playtime(playtime.total_secs);
+        let total_playtime = animation::format_playtime(playtime.total_secs);
         let current_session = if playtime.current_session_secs > 0 {
-            format_playtime(playtime.current_session_secs)
+            animation::format_playtime(playtime.current_session_secs)
         } else {
             "Not running".into()
         };
@@ -191,20 +191,6 @@ fn card(label: impl Into<SharedString>, value: SharedString, theme: &Theme) -> D
         .rounded(theme.radius)
         .child(div().text_sm().text_color(theme.muted_foreground).child(label.into()))
         .child(div().text_lg().child(value))
-}
-
-fn format_playtime(total_secs: u64) -> SharedString {
-    let hours = total_secs / 3600;
-    let minutes = (total_secs % 3600) / 60;
-    let seconds = total_secs % 60;
-
-    if hours > 0 {
-        format!("{hours}h {minutes}m").into()
-    } else if minutes > 0 {
-        format!("{minutes}m {seconds}s").into()
-    } else {
-        format!("{seconds}s").into()
-    }
 }
 
 pub struct WorldsListDelegate {

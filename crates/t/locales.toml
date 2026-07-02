@@ -1891,6 +1891,16 @@ en = "Here's what's new in this release:"
 de = "Das ist neu in dieser Version:"
 hu = "Az új verzióban:"
 sv = "Det här är nytt i den här versionen:"
+[whats_new.feature_home]
+en = "New Home page with quick play, stats, modpack showcase, and mod recommendations"
+de = "Neue Startseite mit Schnellstart, Statistiken, Modpack-Übersicht und Mod-Empfehlungen"
+hu = "Új kezdőlap gyors indítással, statisztikákkal, modpack bemutatóval és mod ajánlásokkal"
+sv = "Ny hemsida med snabbspel, statistik, modpack-översikt och modrekommendationer"
+[whats_new.feature_refresh_anim]
+en = "Refresh button spin animation on content tabs"
+de = "Dreh-Animation für den Aktualisieren-Button in Inhalts-Tabs"
+hu = "Forgó animáció a frissítés gombon a tartalom fülökön"
+sv = "Rotationsanimation på uppdateringsknappen i innehållsflikar"
 [whats_new.feature_extract]
 en = "Modpack extraction with progress log and install-to-folders"
 de = "Modpack-Extraktion mit Fortschrittsprotokoll und Ordner-Installation"
@@ -1921,6 +1931,102 @@ en = "Automatic launcher update checks"
 de = "Automatische Launcher-Update-Prüfung"
 hu = "Automatikus launcher frissítés-ellenőrzés"
 sv = "Automatiska uppdateringskontroller för launchern"
+
+[home.title]
+en = "Home"
+de = "Start"
+hu = "Kezdőlap"
+sv = "Hem"
+[home.greeting]
+en = "Welcome back, ${name: &str}!"
+de = "Willkommen zurück, ${name: &str}!"
+hu = "Üdv újra, ${name: &str}!"
+sv = "Välkommen tillbaka, ${name: &str}!"
+[home.subtitle]
+en = "Jump back into Minecraft or browse your modpack library."
+de = "Steig wieder in Minecraft ein oder durchstöbere deine Modpack-Bibliothek."
+hu = "Ugorj vissza a Minecraftba, vagy böngészd a modpackjeidet."
+sv = "Hoppa tillbaka in i Minecraft eller bläddra i ditt modpack-bibliotek."
+[home.guest]
+en = "Player"
+de = "Spieler"
+hu = "Játékos"
+sv = "Spelare"
+[home.quick_play]
+en = "Continue playing"
+de = "Weiterspielen"
+hu = "Folytatás"
+sv = "Fortsätt spela"
+[home.play_now]
+en = "Play now"
+de = "Jetzt spielen"
+hu = "Játék most"
+sv = "Spela nu"
+[home.no_recent]
+en = "Play an instance to see quick launch here."
+de = "Starte eine Instanz, um hier den Schnellstart zu sehen."
+hu = "Indíts egy példányt a gyors indítás megjelenítéséhez."
+sv = "Starta en instans för att se snabbstart här."
+[home.refresh]
+en = "Refresh"
+de = "Aktualisieren"
+hu = "Frissítés"
+sv = "Uppdatera"
+[home.refresh_hint]
+en = "Stats update as you play and install content."
+de = "Statistiken aktualisieren sich beim Spielen und Installieren."
+hu = "A statisztikák frissülnek játék és telepítés közben."
+sv = "Statistik uppdateras när du spelar och installerar innehåll."
+[home.stat_instances]
+en = "Modpacks"
+de = "Modpacks"
+hu = "Modpackok"
+sv = "Modpacks"
+[home.stat_mods]
+en = "Installed mods"
+de = "Installierte Mods"
+hu = "Telepített modok"
+sv = "Installerade mods"
+[home.your_modpacks]
+en = "Your modpacks"
+de = "Deine Modpacks"
+hu = "Modpackjaid"
+sv = "Dina modpacks"
+[home.view_all]
+en = "View all"
+de = "Alle anzeigen"
+hu = "Összes megtekintése"
+sv = "Visa alla"
+[home.no_modpacks]
+en = "Create or import a modpack to see it here."
+de = "Erstelle oder importiere ein Modpack, um es hier zu sehen."
+hu = "Hozz létre vagy importálj modpackot a megjelenítéshez."
+sv = "Skapa eller importera ett modpack för att se det här."
+[home.recommended_mods]
+en = "Recommended mods"
+de = "Empfohlene Mods"
+hu = "Ajánlott modok"
+sv = "Rekommenderade mods"
+[home.browse_mods]
+en = "Browse Modrinth"
+de = "Modrinth durchsuchen"
+hu = "Modrinth böngészése"
+sv = "Bläddra på Modrinth"
+[home.no_recommendations]
+en = "Star mods on Modrinth or CurseForge to see recommendations here."
+de = "Markiere Mods auf Modrinth oder CurseForge, um Empfehlungen zu sehen."
+hu = "Csillagozd meg a modokat a Modrinth/CurseForge oldalakon az ajánlásokhoz."
+sv = "Stjärnmarkera mods på Modrinth eller CurseForge för rekommendationer här."
+[home.welcome_title]
+en = "Welcome to Quartz Launcher"
+de = "Willkommen bei Quartz Launcher"
+hu = "Üdv a Quartz Launcherben"
+sv = "Välkommen till Quartz Launcher"
+[home.welcome_subtitle]
+en = "Create your first modpack or import one to get started."
+de = "Erstelle dein erstes Modpack oder importiere eines, um loszulegen."
+hu = "Hozd létre az első modpackod, vagy importálj egyet a kezdéshez."
+sv = "Skapa ditt första modpack eller importera ett för att komma igång."
 
 [instance.sync.label]
 en = "Syncing"

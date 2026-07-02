@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     component::{animation, menu::{MenuGroup, MenuGroupItem, MenuIndicator}, page_path::PagePath, quartz_logo::QuartzLogo, resize_panel::{ResizePanel, ResizePanelState}, shrinking_text::ShrinkingText, title_bar::TitleBar}, entity::{
         DataEntities, account::AccountExt, instance::{InstanceAddedEvent, InstanceEntries, InstanceModifiedEvent, InstanceMovedToTopEvent, InstanceRemovedEvent}
-    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
+    }, icon::QuartzIcon, interface_config::InterfaceConfig, modals, pages::{curseforge_page::CurseforgeSearchPage, home_page::HomePage, import::ImportPage, instance::instance_page::InstancePage, instances_page::InstancesPage, modrinth_page::ModrinthSearchPage, modrinth_project_page::ModrinthProjectPage, page::Page, performance_page::PerformancePage, skins_page::SkinsPage, syncing_page::SyncingPage}, png_render_cache, MINECRAFT_FONT,
 };
 
 pub struct LauncherUI {
@@ -38,6 +38,7 @@ pub struct LauncherUI {
 #[serde(rename_all = "snake_case")]
 pub enum PageType {
     #[default]
+    Home,
     Instances,
     Skins,
     Modrinth {
@@ -62,6 +63,7 @@ pub enum PageType {
 impl PageType {
     pub fn title(&self, data: &DataEntities, cx: &App) -> SharedString {
         match self {
+            PageType::Home => t::home::title().into(),
             PageType::Instances => t::instance::title().into(),
             PageType::Skins => t::skins::title().into(),
             PageType::Modrinth { installing_for } => {
@@ -92,6 +94,7 @@ impl PageType {
 
 #[derive(Clone)]
 pub enum LauncherPage {
+    Home(Entity<HomePage>),
     Instances(Entity<InstancesPage>),
     Skins(Entity<SkinsPage>),
     Modrinth(Entity<ModrinthSearchPage>),
@@ -112,6 +115,7 @@ impl LauncherPage {
         }
 
         let (scrollable, controls, page) = match self {
+            LauncherPage::Home(entity) => process(entity, window, cx),
             LauncherPage::Instances(entity) => process(entity, window, cx),
             LauncherPage::Skins(entity) => process(entity, window, cx),
             LauncherPage::Modrinth(entity) => process(entity, window, cx),
@@ -188,7 +192,7 @@ impl LauncherUI {
                 if let LauncherPage::InstancePage(page) = &this.page
                     && page.read(cx).instance.read(cx).id == event.id
                 {
-                    this.switch_page(PageType::Instances, &[], window, cx);
+                    this.switch_page(PageType::Home, &[], window, cx);
                 }
                 cx.notify();
             });
@@ -269,6 +273,9 @@ impl LauncherUI {
 
     fn create_page(data: &DataEntities, page: PageType, window: &mut Window, cx: &mut Context<Self>) -> Result<LauncherPage, PageType> {
         match page {
+            PageType::Home => {
+                Ok(LauncherPage::Home(cx.new(|cx| HomePage::new(data, window, cx))))
+            },
             PageType::Instances => {
                 Ok(LauncherPage::Instances(cx.new(|cx| InstancesPage::new(data, window, cx))))
             },
@@ -464,6 +471,11 @@ impl Render for LauncherUI {
         };
 
         let library_group = MenuGroup::new(t::sidebar::minecraft())
+            .child(MenuGroupItem::new(t::home::title())
+                .active(page_type == PageType::Home)
+                .on_click(cx.listener(|launcher, _, window, cx| {
+                    launcher.switch_page(PageType::Home, &[], window, cx);
+                })))
             .child(MenuGroupItem::new(t::instance::title())
                 .active(page_type == PageType::Instances)
                 .on_click(cx.listener(|launcher, _, window, cx| {

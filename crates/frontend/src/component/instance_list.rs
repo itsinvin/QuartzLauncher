@@ -9,7 +9,7 @@ use crate::{component::animation::format_last_played, entity::{
     }, png_render_cache, root, ui,
 };
 
-fn instance_is_active(status: InstanceStatus) -> bool {
+pub fn instance_is_active(status: InstanceStatus) -> bool {
     matches!(status, InstanceStatus::Running | InstanceStatus::Launching)
 }
 pub struct InstanceList {
@@ -74,7 +74,7 @@ impl InstanceList {
         self.visible_indices.len()
     }
 
-    fn sort_by_last_played(items: &mut [InstanceEntry]) {
+    pub fn sort_by_last_played(items: &mut [InstanceEntry]) {
         items.sort_by_key(|item| -(item.playtime.last_played_unix_ms.unwrap_or(0)));
     }
     pub fn create_table(data: &DataEntities, window: &mut Window, cx: &mut App) -> Entity<TableState<Self>> {

@@ -41,9 +41,8 @@ pub fn open(window: &mut Window, cx: &mut App) {
                     .child(
                         v_flex()
                             .gap_2()
-                            .child(feature_item(t::whats_new::feature_extract()))
-                            .child(feature_item(t::whats_new::feature_performance()))
-                            .child(feature_item(t::whats_new::feature_refresh()))
+                            .child(feature_item(t::whats_new::feature_home()))
+                            .child(feature_item(t::whats_new::feature_refresh_anim()))
                             .child(feature_item(t::whats_new::feature_import()))
                             .child(feature_item(t::whats_new::feature_mod_link()))
                             .child(feature_item(t::whats_new::feature_updates())),

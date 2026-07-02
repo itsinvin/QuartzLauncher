@@ -4,6 +4,12 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.23] - 2026-07-02
+
+### Added
+- **Home page** — quick play for your last modpack, player skin preview, library stats, modpack showcase, and favorite-mod recommendations
+- **Refresh button animation** — content tabs spin the refresh icon when rescanning folders
+
 ## [5.2.22] - 2026-07-02
 
 ### Fixed
