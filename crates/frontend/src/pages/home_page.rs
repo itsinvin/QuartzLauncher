@@ -1,6 +1,6 @@
 use bridge::{
     handle::BackendHandle,
-    instance::{ContentFolder, InstanceStatus},
+    instance::ContentFolder,
     message::{AccountSkinResult, MessageToBackend},
 };
 use gpui::{prelude::FluentBuilder as _, *};
@@ -52,7 +52,7 @@ pub struct HomePage {
 }
 
 impl HomePage {
-    pub fn new(data: &DataEntities, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(data: &DataEntities, _window: &mut Window, cx: &mut Context<Self>) -> Self {
         let player_model = cx.new(|cx| PlayerModelWidget::new(cx, DEFAULT_SKIN.clone()));
         let instances = data.instances.clone();
 
@@ -244,14 +244,19 @@ impl Render for HomePage {
 
         let refresh_generation = self.refresh_generation;
 
+        let hero = self.hero_section(last_played.as_ref(), &account_name, refresh_generation, cx);
+        let stats = self.stats_section(&stats, cx);
+        let modpacks = self.modpack_section(&showcase, cx);
+        let recommendations = self.recommendations_section(&modrinth_favorites, &curseforge_favorites, cx);
+
         v_flex()
             .size_full()
             .p_6()
             .gap_6()
-            .child(self.hero_section(last_played.as_ref(), &account_name, refresh_generation, window, cx))
-            .child(self.stats_section(&stats, cx))
-            .child(self.modpack_section(&showcase, window, cx))
-            .child(self.recommendations_section(&modrinth_favorites, &curseforge_favorites, window, cx))
+            .child(hero)
+            .child(stats)
+            .child(modpacks)
+            .child(recommendations)
             .into_any_element()
     }
 }
@@ -262,7 +267,6 @@ impl HomePage {
         last_played: Option<&InstanceEntry>,
         account_name: &SharedString,
         refresh_generation: u64,
-        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let theme = cx.theme();
@@ -405,15 +409,18 @@ impl HomePage {
     fn modpack_section(
         &self,
         instances: &[InstanceEntry],
-        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
+        let mut cards = Vec::new();
+        for (index, instance) in instances.iter().enumerate() {
+            cards.push(self.render_modpack_card(instance, index, cx));
+        }
+
         let theme = cx.theme();
-        let cards = instances
-            .iter()
-            .enumerate()
-            .map(|(index, instance)| self.render_modpack_card(instance, index, cx))
-            .collect::<Vec<_>>();
+        let empty_radius = theme.radius;
+        let empty_border = theme.border;
+        let empty_muted = theme.muted_foreground;
+        let is_empty = instances.is_empty();
 
         v_flex()
             .w_full()
@@ -434,22 +441,24 @@ impl HomePage {
                             }),
                     ),
             )
-            .child(
-                div().child(
-                    ResponsiveGrid::new(Size::new(AvailableSpace::Definite(px(280.0)), AvailableSpace::MinContent))
-                        .w_full()
-                        .gap_4()
-                        .children(cards),
-                ),
-            )
-            .when(instances.is_empty(), |this| {
+            .when(!is_empty, |this| {
+                this.child(
+                    div().child(
+                        ResponsiveGrid::new(Size::new(AvailableSpace::Definite(px(280.0)), AvailableSpace::MinContent))
+                            .w_full()
+                            .gap_4()
+                            .children(cards),
+                    ),
+                )
+            })
+            .when(is_empty, |this| {
                 this.child(
                     div()
                         .p_4()
-                        .rounded(theme.radius)
+                        .rounded(empty_radius)
                         .border_1()
-                        .border_color(theme.border)
-                        .text_color(theme.muted_foreground)
+                        .border_color(empty_border)
+                        .text_color(empty_muted)
                         .child(t::home::no_modpacks()),
                 )
             })
@@ -457,6 +466,14 @@ impl HomePage {
 
     fn render_modpack_card(&self, instance: &InstanceEntry, index: usize, cx: &mut Context<Self>) -> AnyElement {
         let theme = cx.theme();
+        let card_radius = theme.radius_lg;
+        let card_muted = theme.muted;
+        let card_border = theme.border;
+        let card_success = theme.success;
+        let card_sidebar_primary = theme.sidebar_primary;
+        let card_list_hover = theme.list_hover;
+        let card_radius_sm = theme.radius;
+        let card_muted_foreground = theme.muted_foreground;
         let loader_and_version = format!(
             "{} {}",
             instance.configuration.loader.pretty_name(),
@@ -468,7 +485,7 @@ impl HomePage {
         let icon = if let Some(icon) = instance.icon.clone() {
             let transform = png_render_cache::ImageTransformation::Resize { width: 48, height: 48 };
             png_render_cache::render_with_transform(icon, transform, cx)
-                .rounded(theme.radius)
+                .rounded(card_radius_sm)
                 .size_12()
                 .into_any_element()
         } else {
@@ -490,15 +507,15 @@ impl HomePage {
             .p_3()
             .gap_2()
             .min_w_64()
-            .bg(theme.muted)
+            .bg(card_muted)
             .border_1()
             .border_color(if is_active {
-                theme.success.opacity(0.55)
+                card_success.opacity(0.55)
             } else {
-                theme.border
+                card_border
             })
-            .rounded(theme.radius_lg)
-            .hover(|this| this.border_color(theme.sidebar_primary.opacity(0.85)).bg(theme.list_hover))
+            .rounded(card_radius)
+            .hover(|this| this.border_color(card_sidebar_primary.opacity(0.85)).bg(card_list_hover))
             .on_click({
                 let name = name.clone();
                 move |_, window, cx| {
@@ -522,13 +539,13 @@ impl HomePage {
                             .child(
                                 div()
                                     .text_sm()
-                                    .text_color(theme.muted_foreground)
+                                    .text_color(card_muted_foreground)
                                     .child(loader_and_version),
                             )
                             .child(
                                 div()
                                     .text_xs()
-                                    .text_color(theme.muted_foreground.opacity(0.85))
+                                    .text_color(card_muted_foreground.opacity(0.85))
                                     .child(last_played),
                             ),
                     ),
@@ -557,10 +574,8 @@ impl HomePage {
         &self,
         modrinth_favorites: &[ModrinthFavorite],
         curseforge_favorites: &[CurseforgeFavorite],
-        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let theme = cx.theme();
         let mut recommendations = Vec::new();
 
         for favorite in modrinth_favorites.iter().take(4) {
@@ -588,6 +603,17 @@ impl HomePage {
             });
         }
 
+        let mut card_elements = Vec::new();
+        for (index, card) in recommendations.into_iter().enumerate() {
+            card_elements.push(card.render(index, cx));
+        }
+
+        let theme = cx.theme();
+        let empty_radius = theme.radius;
+        let empty_border = theme.border;
+        let empty_muted = theme.muted_foreground;
+        let has_recommendations = !card_elements.is_empty();
+
         v_flex()
             .w_full()
             .gap_3()
@@ -607,25 +633,23 @@ impl HomePage {
                             }),
                     ),
             )
-            .when(recommendations.is_empty(), |this| {
+            .when(!has_recommendations, |this| {
                 this.child(
                     div()
                         .p_4()
-                        .rounded(theme.radius)
+                        .rounded(empty_radius)
                         .border_1()
-                        .border_color(theme.border)
-                        .text_color(theme.muted_foreground)
+                        .border_color(empty_border)
+                        .text_color(empty_muted)
                         .child(t::home::no_recommendations()),
                 )
             })
-            .when(!recommendations.is_empty(), |this| {
+            .when(has_recommendations, |this| {
                 this.child(
                     ResponsiveGrid::new(Size::new(AvailableSpace::Definite(px(220.0)), AvailableSpace::MinContent))
                         .w_full()
                         .gap_3()
-                        .children(recommendations.into_iter().enumerate().map(|(index, card)| {
-                            card.render(index, &theme, window, cx)
-                        })),
+                        .children(card_elements),
                 )
             })
     }
@@ -639,18 +663,26 @@ struct RecommendationCard {
 }
 
 impl RecommendationCard {
-    fn render(self, index: usize, theme: &gpui_component::Theme, _window: &mut Window, _cx: &mut App) -> AnyElement {
+    fn render(self, index: usize, cx: &mut App) -> AnyElement {
+        let theme = cx.theme();
+        let card_muted = theme.muted;
+        let card_border = theme.border;
+        let card_radius = theme.radius;
+        let card_secondary = theme.secondary;
+        let card_list_hover = theme.list_hover;
+        let card_sidebar_primary = theme.sidebar_primary;
+        let card_muted_foreground = theme.muted_foreground;
         let page = self.page;
         h_flex()
             .id(("home-rec", index))
             .gap_3()
             .p_3()
             .min_w_48()
-            .bg(theme.muted)
+            .bg(card_muted)
             .border_1()
-            .border_color(theme.border)
-            .rounded(theme.radius)
-            .hover(|this| this.bg(theme.list_hover).border_color(theme.sidebar_primary.opacity(0.6)))
+            .border_color(card_border)
+            .rounded(card_radius)
+            .hover(|this| this.bg(card_list_hover).border_color(card_sidebar_primary.opacity(0.6)))
             .cursor_pointer()
             .on_click(move |_, window, cx| {
                 root::switch_page(page.clone(), &[PageType::Home], window, cx);
@@ -659,13 +691,13 @@ impl RecommendationCard {
                 if let Some(url) = self.thumbnail {
                     gpui::img(SharedUri::from(url))
                         .size_10()
-                        .rounded(theme.radius)
+                        .rounded(card_radius)
                         .into_any_element()
                 } else {
                     div()
                         .size_10()
-                        .rounded(theme.radius)
-                        .bg(theme.secondary)
+                        .rounded(card_radius)
+                        .bg(card_secondary)
                         .flex()
                         .items_center()
                         .justify_center()
@@ -682,7 +714,7 @@ impl RecommendationCard {
                     .child(
                         div()
                             .text_xs()
-                            .text_color(theme.muted_foreground)
+                            .text_color(card_muted_foreground)
                             .line_clamp(2)
                             .child(self.subtitle),
                     ),
