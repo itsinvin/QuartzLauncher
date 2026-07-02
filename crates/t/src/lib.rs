@@ -444,12 +444,17 @@ pub mod home {
     pub fn get(key: &str) -> Option<&'static str> {
         match key {
             "browse_mods" => Some(browse_mods()),
+            "favorite_mods" => Some(favorite_mods()),
             "guest" => Some(guest()),
+            "loading_recommendations" => Some(loading_recommendations()),
+            "no_favorites" => Some(no_favorites()),
             "no_modpacks" => Some(no_modpacks()),
             "no_recent" => Some(no_recent()),
+            "no_recent_skins" => Some(no_recent_skins()),
             "no_recommendations" => Some(no_recommendations()),
             "play_now" => Some(play_now()),
             "quick_play" => Some(quick_play()),
+            "recent_skins" => Some(recent_skins()),
             "recommended_mods" => Some(recommended_mods()),
             "refresh" => Some(refresh()),
             "refresh_hint" => Some(refresh_hint()),
@@ -458,6 +463,7 @@ pub mod home {
             "subtitle" => Some(subtitle()),
             "title" => Some(title()),
             "view_all" => Some(view_all()),
+            "view_favorites" => Some(view_favorites()),
             "welcome_subtitle" => Some(welcome_subtitle()),
             "welcome_title" => Some(welcome_title()),
             "your_modpacks" => Some(your_modpacks()),
@@ -470,6 +476,14 @@ pub mod home {
             2 => "Modrinth böngészése",
             3 => "Bläddra på Modrinth",
             _ => "Browse Modrinth",
+        }
+    }
+    pub fn favorite_mods() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Lieblingsmods",
+            2 => "Kedvenc modok",
+            3 => "Favoritmods",
+            _ => "Favorite mods",
         }
     }
     pub fn greeting(name: &str) -> String {
@@ -488,6 +502,22 @@ pub mod home {
             _ => "Player",
         }
     }
+    pub fn loading_recommendations() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Suche Mods für dein Setup...",
+            2 => "Modok keresése a beállításaidhoz...",
+            3 => "Hittar mods för din setup...",
+            _ => "Finding mods for your setup...",
+        }
+    }
+    pub fn no_favorites() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Markiere Mods auf Modrinth oder CurseForge, um sie hier zu sehen.",
+            2 => "Csillagozd meg a modokat a Modrinth/CurseForge oldalakon a kedvencek megjelenítéséhez.",
+            3 => "Stjärnmarkera mods på Modrinth eller CurseForge för att se favoriter här.",
+            _ => "Star mods on Modrinth or CurseForge to see your favorites here.",
+        }
+    }
     pub fn no_modpacks() -> &'static str {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
             1 => "Erstelle oder importiere ein Modpack, um es hier zu sehen.",
@@ -504,12 +534,20 @@ pub mod home {
             _ => "Play an instance to see quick launch here.",
         }
     }
+    pub fn no_recent_skins() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Wende Skins auf der Skins-Seite an, um deinen Verlauf aufzubauen.",
+            2 => "Alkalmazz skineket a Skinek oldalon az előzményekhez.",
+            3 => "Använd skins från Skins-sidan för att bygga historik.",
+            _ => "Apply skins from the Skins page to build your history.",
+        }
+    }
     pub fn no_recommendations() -> &'static str {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
-            1 => "Markiere Mods auf Modrinth oder CurseForge, um Empfehlungen zu sehen.",
-            2 => "Csillagozd meg a modokat a Modrinth/CurseForge oldalakon az ajánlásokhoz.",
-            3 => "Stjärnmarkera mods på Modrinth eller CurseForge för rekommendationer här.",
-            _ => "Star mods on Modrinth or CurseForge to see recommendations here.",
+            1 => "Spiele eine Instanz, um Mod-Vorschläge basierend auf Loader und Version zu erhalten.",
+            2 => "Játssz egy példánnyal, hogy modjavaslatokat kapj a loader és verzió alapján.",
+            3 => "Spela en instans för modförslag baserat på loader och version.",
+            _ => "Play an instance to get mod suggestions based on your loader and version.",
         }
     }
     pub fn play_now() -> &'static str {
@@ -526,6 +564,14 @@ pub mod home {
             2 => "Folytatás",
             3 => "Fortsätt spela",
             _ => "Continue playing",
+        }
+    }
+    pub fn recent_skins() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Zuletzt verwendete Skins",
+            2 => "Legutóbbi skinek",
+            3 => "Senaste skins",
+            _ => "Recent skins",
         }
     }
     pub fn recommended_mods() -> &'static str {
@@ -590,6 +636,14 @@ pub mod home {
             2 => "Összes megtekintése",
             3 => "Visa alla",
             _ => "View all",
+        }
+    }
+    pub fn view_favorites() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Favoriten anzeigen",
+            2 => "Kedvencek megtekintése",
+            3 => "Visa favoriter",
+            _ => "View favorites",
         }
     }
     pub fn welcome_subtitle() -> &'static str {

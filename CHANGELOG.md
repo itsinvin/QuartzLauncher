@@ -4,6 +4,13 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.34] - 2026-07-02
+
+### Added
+- Separate Favorite mods and Recommended mods sections on the home page
+- Mod recommendation algorithm based on your loader, Minecraft version, and installed mods
+- Recent skins grid beside the home page player preview
+
 ## [5.2.33] - 2026-07-02
 
 ### Fixed
