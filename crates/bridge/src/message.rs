@@ -198,6 +198,10 @@ pub enum MessageToBackend {
         file: PathBuf,
         modal_action: ModalAction,
     },
+    CreateInstanceFromFolder {
+        folder: PathBuf,
+        modal_action: ModalAction,
+    },
     DownloadAllMetadata,
     UpdateCheck {
         instance: InstanceID,
@@ -276,6 +280,7 @@ pub enum MessageToBackend {
         update: UpdatePrompt,
         modal_action: ModalAction,
     },
+    CheckLauncherUpdate,
     ImportFromOtherLauncher {
         launcher: OtherLauncher,
         import_job: ImportFromOtherLauncherJob,
@@ -360,7 +365,8 @@ pub enum MessageToFrontend {
         content: Arc<[InstanceContentSummary]>,
     },
     CreateGameOutputWindow {
-        receiver: tokio::sync::mpsc::UnboundedReceiver<GameOutputMsg>
+        instance_id: InstanceID,
+        receiver: tokio::sync::mpsc::UnboundedReceiver<GameOutputMsg>,
     },
     AddNotification {
         notification_type: BridgeNotificationType,

@@ -19,21 +19,18 @@ pub struct InstancePage {
     backend_handle: BackendHandle,
     data: DataEntities,
     pub instance: Entity<InstanceEntry>,
-    subpage: InstanceSubpage,
+    subpages: InstanceSubpageCache,
 }
 
 impl InstancePage {
-    pub fn new(instance_id: InstanceID, data: &DataEntities, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(instance_id: InstanceID, data: &DataEntities, _window: &mut Window, cx: &mut Context<Self>) -> Self {
         let instance = data.instances.read(cx).entries.get(&instance_id).unwrap().clone();
-
-        let instance_subpage = InterfaceConfig::get(cx).instance_subpage;
-        let subpage = instance_subpage.create(&instance, data, data.backend_handle.clone(), window, cx);
 
         Self {
             backend_handle: data.backend_handle.clone(),
             data: data.clone(),
             instance,
-            subpage,
+            subpages: InstanceSubpageCache::default(),
         }
     }
 }
@@ -145,13 +142,18 @@ impl Page for InstancePage {
 impl Render for InstancePage {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let instance_subpage = InterfaceConfig::get(cx).instance_subpage;
-        if instance_subpage != self.subpage.page_type() {
-            self.subpage = instance_subpage.create(&self.instance, &self.data, self.backend_handle.clone(), window, cx);
-        }
+        let subpage = self.subpages.get_or_create(
+            instance_subpage,
+            &self.instance,
+            &self.data,
+            self.backend_handle.clone(),
+            window,
+            cx,
+        );
 
-        let show_shader_tab = self.instance.read(cx).configuration.show_shader_tab || matches!(self.subpage, InstanceSubpage::Shaders(_));
+        let show_shader_tab = self.instance.read(cx).configuration.show_shader_tab || matches!(subpage, InstanceSubpage::Shaders(_));
 
-        let selected_index = match &self.subpage {
+        let selected_index = match &subpage {
             InstanceSubpage::Quickplay(_) => 0,
             InstanceSubpage::Logs(_) => 1,
             InstanceSubpage::Mods(_) => 2,
@@ -207,7 +209,89 @@ impl Render for InstancePage {
                         InterfaceConfig::get_mut(cx).instance_subpage = page_type;
                     })),
             )
-            .child(self.subpage.clone().into_any_element())
+            .child(subpage.into_any_element())
+    }
+}
+
+#[derive(Default)]
+struct InstanceSubpageCache {
+    quickplay: Option<Entity<InstanceQuickplaySubpage>>,
+    logs: Option<Entity<InstanceLogsSubpage>>,
+    mods: Option<Entity<InstanceContentSubpage>>,
+    resource_packs: Option<Entity<InstanceContentSubpage>>,
+    shaders: Option<Entity<InstanceContentSubpage>>,
+    performance: Option<Entity<InstancePerformanceSubpage>>,
+    settings: Option<Entity<InstanceSettingsSubpage>>,
+}
+
+impl InstanceSubpageCache {
+    fn get_or_create(
+        &mut self,
+        subpage_type: InstanceSubpageType,
+        instance: &Entity<InstanceEntry>,
+        data: &DataEntities,
+        backend_handle: BackendHandle,
+        window: &mut gpui::Window,
+        cx: &mut App,
+    ) -> InstanceSubpage {
+        match subpage_type {
+            InstanceSubpageType::Quickplay => {
+                if self.quickplay.is_none() {
+                    self.quickplay = Some(cx.new(|cx| {
+                        InstanceQuickplaySubpage::new(instance, backend_handle.clone(), window, cx)
+                    }));
+                }
+                InstanceSubpage::Quickplay(self.quickplay.clone().unwrap())
+            },
+            InstanceSubpageType::Logs => {
+                if self.logs.is_none() {
+                    self.logs = Some(cx.new(|cx| {
+                        InstanceLogsSubpage::new(instance, backend_handle.clone(), window, cx)
+                    }));
+                }
+                InstanceSubpage::Logs(self.logs.clone().unwrap())
+            },
+            InstanceSubpageType::Mods => {
+                if self.mods.is_none() {
+                    self.mods = Some(cx.new(|cx| {
+                        InstanceContentSubpage::new(instance, ContentType::Mods, backend_handle.clone(), window, cx)
+                    }));
+                }
+                InstanceSubpage::Mods(self.mods.clone().unwrap())
+            },
+            InstanceSubpageType::ResourcePacks => {
+                if self.resource_packs.is_none() {
+                    self.resource_packs = Some(cx.new(|cx| {
+                        InstanceContentSubpage::new(instance, ContentType::ResourcePacks, backend_handle.clone(), window, cx)
+                    }));
+                }
+                InstanceSubpage::ResourcePacks(self.resource_packs.clone().unwrap())
+            },
+            InstanceSubpageType::Shaders => {
+                if self.shaders.is_none() {
+                    self.shaders = Some(cx.new(|cx| {
+                        InstanceContentSubpage::new(instance, ContentType::Shaders, backend_handle.clone(), window, cx)
+                    }));
+                }
+                InstanceSubpage::Shaders(self.shaders.clone().unwrap())
+            },
+            InstanceSubpageType::Performance => {
+                if self.performance.is_none() {
+                    self.performance = Some(cx.new(|cx| {
+                        InstancePerformanceSubpage::new(instance, window, cx)
+                    }));
+                }
+                InstanceSubpage::Performance(self.performance.clone().unwrap())
+            },
+            InstanceSubpageType::Settings => {
+                if self.settings.is_none() {
+                    self.settings = Some(cx.new(|cx| {
+                        InstanceSettingsSubpage::new(instance, data, backend_handle, window, cx)
+                    }));
+                }
+                InstanceSubpage::Settings(self.settings.clone().unwrap())
+            },
+        }
     }
 }
 
@@ -231,31 +315,9 @@ impl InstanceSubpageType {
         data: &DataEntities,
         backend_handle: BackendHandle,
         window: &mut gpui::Window,
-        cx: &mut App
+        cx: &mut App,
     ) -> InstanceSubpage {
-        match self {
-            InstanceSubpageType::Quickplay => InstanceSubpage::Quickplay(cx.new(|cx| {
-                InstanceQuickplaySubpage::new(instance, backend_handle, window, cx)
-            })),
-            InstanceSubpageType::Logs => InstanceSubpage::Logs(cx.new(|cx| {
-                InstanceLogsSubpage::new(instance, backend_handle, window, cx)
-            })),
-            InstanceSubpageType::Mods => InstanceSubpage::Mods(cx.new(|cx| {
-                InstanceContentSubpage::new(instance, ContentType::Mods, backend_handle, window, cx)
-            })),
-            InstanceSubpageType::ResourcePacks => InstanceSubpage::ResourcePacks(cx.new(|cx| {
-                InstanceContentSubpage::new(instance, ContentType::ResourcePacks, backend_handle, window, cx)
-            })),
-            InstanceSubpageType::Shaders => InstanceSubpage::Shaders(cx.new(|cx| {
-                InstanceContentSubpage::new(instance, ContentType::Shaders, backend_handle, window, cx)
-            })),
-            InstanceSubpageType::Performance => InstanceSubpage::Performance(cx.new(|cx| {
-                InstancePerformanceSubpage::new(instance, window, cx)
-            })),
-            InstanceSubpageType::Settings => InstanceSubpage::Settings(cx.new(|cx| {
-                InstanceSettingsSubpage::new(instance, data, backend_handle, window, cx)
-            })),
-        }
+        InstanceSubpageCache::default().get_or_create(self, instance, data, backend_handle, window, cx)
     }
 }
 

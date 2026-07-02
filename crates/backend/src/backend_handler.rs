@@ -544,6 +544,12 @@ impl BackendState {
                     this.send.send(MessageToFrontend::Refresh);
                 });
             },
+            MessageToBackend::CreateInstanceFromFolder { folder, modal_action } => {
+                let this = self.clone();
+                tokio::spawn(async move {
+                    this.import_modpack_from_folder(folder, modal_action.clone()).await;
+                });
+            },
             MessageToBackend::DeleteContent { id, content_ids: mod_ids } => {
                 let mut instance_state = self.instance_state.write();
                 let Some(instance) = instance_state.instances.get_mut(id) else {
@@ -664,12 +670,7 @@ impl BackendState {
                         let tracker = &tracker;
                         futures.push(async move {
                             match source {
-                                ContentSource::Manual => {
-                                    tracker.add_count(1);
-                                    tracker.notify();
-                                    Ok(ContentUpdateAction::ManualInstall)
-                                },
-                                ContentSource::ModrinthUnknown | ContentSource::ModrinthProject { .. } => {
+                                ContentSource::Manual | ContentSource::ModrinthUnknown | ContentSource::ModrinthProject { .. } => {
                                     let permit = semaphore.acquire().await.unwrap();
                                     let result = match summary.content_summary.extra {
                                         ContentType::Fabric => {
@@ -721,7 +722,11 @@ impl BackendState {
                                     tracker.notify();
 
                                     if let Err(MetaLoadError::NonOK(404)) = result {
-                                        return Ok(ContentUpdateAction::ErrorNotFound);
+                                        return Ok(if matches!(source, ContentSource::Manual) {
+                                            ContentUpdateAction::ManualInstall
+                                        } else {
+                                            ContentUpdateAction::ErrorNotFound
+                                        });
                                     }
 
                                     let result = result?;
@@ -747,7 +752,12 @@ impl BackendState {
                                     };
 
                                     if latest_hash == summary.content_summary.hash {
-                                        Ok(ContentUpdateAction::AlreadyUpToDate)
+                                        Ok(match source {
+                                            ContentSource::ModrinthProject { .. } => ContentUpdateAction::AlreadyUpToDate,
+                                            _ => ContentUpdateAction::LinkModrinth {
+                                                project_id: result.0.project_id.clone(),
+                                            },
+                                        })
                                     } else {
                                         Ok(ContentUpdateAction::Modrinth {
                                             file: install_file.clone(),
@@ -899,6 +909,36 @@ impl BackendState {
                         ContentUpdateAction::ManualInstall => {
                             self.send.send_error("Can't update mod in instance, mod was manually installed");
                             modal_action.set_finished();
+                            return;
+                        },
+                        ContentUpdateAction::LinkModrinth { project_id } => {
+                            self.mod_metadata_manager.set_content_sources(std::iter::once((
+                                mod_summary.content_summary.hash,
+                                ContentSource::ModrinthProject { project_id },
+                            )));
+                            self.mod_metadata_manager.write_changes();
+
+                            if let Some(instance) = self.instance_state.write().instances.get_mut(id) {
+                                instance.mark_content_dirty(self, ContentFolder::Mods, FolderChanges::all_dirty(), true);
+                            }
+
+                            modal_action.set_finished();
+                            self.send.send(MessageToFrontend::Refresh);
+                            return;
+                        },
+                        ContentUpdateAction::LinkCurseforge { project_id } => {
+                            self.mod_metadata_manager.set_content_sources(std::iter::once((
+                                mod_summary.content_summary.hash,
+                                ContentSource::CurseforgeProject { project_id },
+                            )));
+                            self.mod_metadata_manager.write_changes();
+
+                            if let Some(instance) = self.instance_state.write().instances.get_mut(id) {
+                                instance.mark_content_dirty(self, ContentFolder::Mods, FolderChanges::all_dirty(), true);
+                            }
+
+                            modal_action.set_finished();
+                            self.send.send(MessageToFrontend::Refresh);
                             return;
                         },
                         ContentUpdateAction::Modrinth { file, project_id } => {
@@ -1599,6 +1639,13 @@ impl BackendState {
 
                 }
             },
+            MessageToBackend::CheckLauncherUpdate => {
+                let client = self.redirecting_http_client.clone();
+                let send = self.send.clone();
+                tokio::spawn(async move {
+                    crate::update::check_for_updates(client, send).await;
+                });
+            },
             MessageToBackend::InstallUpdate { update, modal_action } => {
                 tokio::task::spawn(crate::update::install_update(self.redirecting_http_client.clone(), self.directories.clone(), self.send.clone(), update, modal_action));
             },
@@ -2066,7 +2113,7 @@ impl BackendState {
             Ok(mut child) => {
                 if game_output {
                     if let Some(stdout) = child.stdout.take() {
-                        log_reader::start_game_output(stdout, child.stderr.take(), self.send.clone());
+                        log_reader::start_game_output(stdout, child.stderr.take(), self.send.clone(), id);
                     }
                 }
 

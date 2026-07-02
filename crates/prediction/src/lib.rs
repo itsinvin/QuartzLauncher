@@ -7,6 +7,6 @@ pub mod hardware;
 pub mod models;
 pub mod prediction;
 
-pub use hardware::{detect_hardware, score_cpu, score_gpu};
+pub use hardware::{detect_hardware, get_hardware_profile, refresh_hardware_profile, score_cpu, score_gpu};
 pub use models::*;
 pub use prediction::predict_performance;

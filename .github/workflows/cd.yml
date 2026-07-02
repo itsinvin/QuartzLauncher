@@ -35,6 +35,23 @@ jobs:
         run: bash ./scripts/build_windows.sh ${{ github.ref_name }}
         shell: bash
 
+      - name: Push README build info to main
+        shell: bash
+        run: |
+          if git diff --quiet -- README.md; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp README.md /tmp/README.md.build
+          git fetch origin main
+          git checkout main
+          git pull --rebase origin main
+          cp /tmp/README.md.build README.md
+          git add README.md
+          git commit -m "docs: update README build info for ${{ github.ref_name }}"
+          git push origin main
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

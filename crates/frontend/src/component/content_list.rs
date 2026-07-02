@@ -202,10 +202,12 @@ impl ContentListDelegate {
                 Button::new(("update", element_id)).icon(QuartzIcon::Check)
                     .tooltip(t::instance::content::update::check::last_up_to_date())
             ),
-            bridge::instance::ContentUpdateStatus::Modrinth | bridge::instance::ContentUpdateStatus::Curseforge => {
+            bridge::instance::ContentUpdateStatus::Modrinth | bridge::instance::ContentUpdateStatus::Curseforge | bridge::instance::ContentUpdateStatus::LinkModrinth | bridge::instance::ContentUpdateStatus::LinkCurseforge => {
                 let tooltip = match status {
                     bridge::instance::ContentUpdateStatus::Modrinth => t::instance::content::update::download::from_modrinth(),
                     bridge::instance::ContentUpdateStatus::Curseforge => t::instance::content::update::download::from_curseforge(),
+                    bridge::instance::ContentUpdateStatus::LinkModrinth => t::instance::content::update::link_modrinth(),
+                    bridge::instance::ContentUpdateStatus::LinkCurseforge => t::instance::content::update::link_curseforge(),
                     _ => unreachable!()
                 };
 

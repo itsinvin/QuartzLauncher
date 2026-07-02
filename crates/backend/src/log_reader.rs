@@ -1,7 +1,10 @@
 use std::{borrow::Cow, io::{BufRead, BufReader, PipeReader}, sync::Arc};
 
 use bridge::{
-    game_output::GameOutputLogLevel, handle::FrontendHandle, message::{GameOutputMsg, MessageToFrontend},
+    game_output::GameOutputLogLevel,
+    handle::FrontendHandle,
+    instance::InstanceID,
+    message::{GameOutputMsg, MessageToFrontend},
 };
 use chrono::Utc;
 use memchr::memchr;
@@ -33,9 +36,14 @@ pub fn replace(string: &str) -> Cow<'_, str> {
     replaced
 }
 
-pub fn start_game_output(stdout: PipeReader, stderr: Option<PipeReader>, frontend: FrontendHandle) {
+pub fn start_game_output(
+    stdout: PipeReader,
+    stderr: Option<PipeReader>,
+    frontend: FrontendHandle,
+    instance_id: InstanceID,
+) {
     let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
-    frontend.send(MessageToFrontend::CreateGameOutputWindow { receiver });
+    frontend.send(MessageToFrontend::CreateGameOutputWindow { instance_id, receiver });
 
     if let Some(stderr) = stderr {
         let sender = sender.clone();

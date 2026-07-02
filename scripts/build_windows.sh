@@ -62,3 +62,7 @@ if [[ -n "$CARGO_PACKAGER_SIGN_PRIVATE_KEY" ]]; then
 
     rm dist/*.sig
 fi
+
+if [ -n "${PYTHON:-}" ]; then
+    $PYTHON scripts/update_readme.py "$version"
+fi
