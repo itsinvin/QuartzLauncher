@@ -244,17 +244,17 @@ impl Render for HomePage {
 
         let refresh_generation = self.refresh_generation;
 
-        let hero = self.hero_section(last_played.as_ref(), &account_name, refresh_generation, cx);
-        let stats = self.stats_section(&stats, cx);
+        let hero = self.hero_section(last_played.clone(), &account_name, refresh_generation, cx);
+        let stats_panel = self.stats_section(&stats, cx);
         let modpacks = self.modpack_section(&showcase, cx);
-        let recommendations = self.recommendations_section(&modrinth_favorites, &curseforge_favorites, cx);
+        let recommendations = self.recommendations_section(modrinth_favorites, curseforge_favorites, cx);
 
         v_flex()
             .size_full()
             .p_6()
             .gap_6()
             .child(hero)
-            .child(stats)
+            .child(stats_panel)
             .child(modpacks)
             .child(recommendations)
             .into_any_element()
@@ -264,11 +264,11 @@ impl Render for HomePage {
 impl HomePage {
     fn hero_section(
         &self,
-        last_played: Option<&InstanceEntry>,
+        last_played: Option<InstanceEntry>,
         account_name: &SharedString,
         refresh_generation: u64,
         cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    ) -> AnyElement {
         let theme = cx.theme();
 
         h_flex()
@@ -381,9 +381,10 @@ impl HomePage {
                         .child(t::home::refresh_hint()),
                 )
             })
+            .into_any_element()
     }
 
-    fn stats_section(&self, stats: &HomeStats, cx: &App) -> impl IntoElement {
+    fn stats_section(&self, stats: &HomeStats, cx: &App) -> AnyElement {
         let theme = cx.theme();
         h_flex()
             .w_full()
@@ -404,13 +405,14 @@ impl HomePage {
                 stats.total_mods.to_string(),
                 theme,
             ))
+            .into_any_element()
     }
 
     fn modpack_section(
         &self,
         instances: &[InstanceEntry],
         cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    ) -> AnyElement {
         let mut cards = Vec::new();
         for (index, instance) in instances.iter().enumerate() {
             cards.push(self.render_modpack_card(instance, index, cx));
@@ -462,6 +464,7 @@ impl HomePage {
                         .child(t::home::no_modpacks()),
                 )
             })
+            .into_any_element()
     }
 
     fn render_modpack_card(&self, instance: &InstanceEntry, index: usize, cx: &mut Context<Self>) -> AnyElement {
@@ -572,13 +575,13 @@ impl HomePage {
 
     fn recommendations_section(
         &self,
-        modrinth_favorites: &[ModrinthFavorite],
-        curseforge_favorites: &[CurseforgeFavorite],
+        modrinth_favorites: Vec<ModrinthFavorite>,
+        curseforge_favorites: Vec<CurseforgeFavorite>,
         cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    ) -> AnyElement {
         let mut recommendations = Vec::new();
 
-        for favorite in modrinth_favorites.iter().take(4) {
+        for favorite in modrinth_favorites.into_iter().take(4) {
             recommendations.push(RecommendationCard {
                 title: favorite.title.clone().into(),
                 subtitle: favorite.author.clone().into(),
@@ -591,7 +594,7 @@ impl HomePage {
             });
         }
 
-        for favorite in curseforge_favorites.iter().take(4) {
+        for favorite in curseforge_favorites.into_iter().take(4) {
             if recommendations.len() >= 6 {
                 break;
             }
@@ -652,6 +655,7 @@ impl HomePage {
                         .children(card_elements),
                 )
             })
+            .into_any_element()
     }
 }
 
