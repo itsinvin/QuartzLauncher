@@ -4,6 +4,11 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.30] - 2026-07-02
+
+### Fixed
+- Deadlock when viewing Modrinth project descriptions with fenced code blocks (tree-sitter JSON highlighting disabled for markdown code blocks; `UniqueBytes` interning uses a reentrant lock)
+
 ## [5.2.29] - 2026-07-02
 
 ### Fixed

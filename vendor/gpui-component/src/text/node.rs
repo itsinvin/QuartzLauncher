@@ -11,11 +11,10 @@ use gpui::{
     prelude::FluentBuilder as _, px, relative, rems,
 };
 use markdown::mdast;
-use ropey::Rope;
 
 use crate::{
     ActiveTheme as _, Icon, IconName, StyledExt, h_flex,
-    highlighter::{HighlightTheme, SyntaxHighlighter},
+    highlighter::HighlightTheme,
     text::{
         CodeBlockActionsFn,
         document::NodeRenderOptions,
@@ -520,12 +519,10 @@ impl CodeBlock {
         highlight_theme: &HighlightTheme,
         span: Option<impl Into<Span>>,
     ) -> Self {
-        let mut styles = vec![];
-        if let Some(lang) = &lang {
-            let mut highlighter = SyntaxHighlighter::new(&lang);
-            highlighter.update(None, &Rope::from_str(code.as_str()), None);
-            styles = highlighter.styles(&(0..code.len()), highlight_theme);
-        };
+        // Skip tree-sitter highlighting: markdown parsing runs on a background thread and
+        // synchronous highlighting has deadlocked with app-wide parking_lot locks.
+        let _ = highlight_theme;
+        let styles = vec![];
 
         let state = Arc::new(Mutex::new(InlineState::default()));
         state.lock().unwrap().set_text(code);
