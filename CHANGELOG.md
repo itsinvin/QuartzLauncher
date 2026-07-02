@@ -4,6 +4,13 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.36] - 2026-07-02
+
+### Added
+- Remove installed mods from Modrinth/CurseForge browse pages when adding to an instance
+- Pre-launch conflict detection on Mods, Resource Packs, and Shaders tabs (duplicate IDs, projects, files, names, loader mismatches)
+- Mixin conflict detection for Fabric mods (multiple mods targeting the same class)
+
 ## [5.2.35] - 2026-07-02
 
 ### Fixed

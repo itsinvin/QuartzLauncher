@@ -1696,6 +1696,72 @@ en = "Add from file"
 de = "Aus Datei hinzufügen"
 hu = "Hozzáadás fájlból"
 sv = "Lägg till från fil"
+
+[instance.content.remove.label]
+en = "Remove"
+de = "Entfernen"
+hu = "Eltávolítás"
+sv = "Ta bort"
+
+[instance.content.remove.tooltip]
+en = "Remove from instance"
+de = "Aus Instanz entfernen"
+hu = "Eltávolítás a példányból"
+sv = "Ta bort från instans"
+
+[instance.content.conflicts.title]
+en = "Conflicts detected"
+de = "Konflikte erkannt"
+hu = "Ütközések észlelve"
+sv = "Konflikter upptäckta"
+
+[instance.content.conflicts.summary]
+en = "${count: usize} conflict(s) found among enabled content"
+de = "${count: usize} Konflikt(e) bei aktiviertem Inhalt gefunden"
+hu = "${count: usize} ütközés található az engedélyezett tartalmak között"
+sv = "${count: usize} konflikt(er) hittades bland aktiverat innehåll"
+
+[instance.content.conflicts.duplicate_mod_id]
+en = "Duplicate mod ID '${id: &str}': ${files: &str}"
+de = "Doppelte Mod-ID '${id: &str}': ${files: &str}"
+hu = "Duplikált mod ID '${id: &str}': ${files: &str}"
+sv = "Duplicerat mod-ID '${id: &str}': ${files: &str}"
+
+[instance.content.conflicts.duplicate_modrinth_project]
+en = "Multiple files from the same Modrinth project '${id: &str}': ${files: &str}"
+de = "Mehrere Dateien vom selben Modrinth-Projekt '${id: &str}': ${files: &str}"
+hu = "Több fájl ugyanabból a Modrinth projektből '${id: &str}': ${files: &str}"
+sv = "Flera filer från samma Modrinth-projekt '${id: &str}': ${files: &str}"
+
+[instance.content.conflicts.duplicate_curseforge_project]
+en = "Multiple files from the same CurseForge project #${id: u32}: ${files: &str}"
+de = "Mehrere Dateien vom selben CurseForge-Projekt #${id: u32}: ${files: &str}"
+hu = "Több fájl ugyanabból a CurseForge projektből #${id: u32}: ${files: &str}"
+sv = "Flera filer från samma CurseForge-projekt #${id: u32}: ${files: &str}"
+
+[instance.content.conflicts.duplicate_file]
+en = "Identical files installed under different names: ${files: &str}"
+de = "Identische Dateien unter verschiedenen Namen installiert: ${files: &str}"
+hu = "Azonos fájlok különböző neveken telepítve: ${files: &str}"
+sv = "Identiska filer installerade under olika namn: ${files: &str}"
+
+[instance.content.conflicts.duplicate_name]
+en = "Multiple files share the name '${name: &str}': ${files: &str}"
+de = "Mehrere Dateien teilen den Namen '${name: &str}': ${files: &str}"
+hu = "Több fájl osztozik a '${name: &str}' néven: ${files: &str}"
+sv = "Flera filer delar namnet '${name: &str}': ${files: &str}"
+
+[instance.content.conflicts.loader_mismatch]
+en = "'${file: &str}' requires ${required: &str} but this instance uses ${actual: &str}"
+de = "'${file: &str}' benötigt ${required: &str}, diese Instanz verwendet jedoch ${actual: &str}"
+hu = "'${file: &str}' ${required: &str} loadert igényel, de ez a példány ${actual: &str} loadert használ"
+sv = "'${file: &str}' kräver ${required: &str} men denna instans använder ${actual: &str}"
+
+[instance.content.conflicts.mixin_target]
+en = "Multiple mods mixin into '${target: &str}': ${files: &str}"
+de = "Mehrere Mods mixin in '${target: &str}': ${files: &str}"
+hu = "Több mod mixin a '${target: &str}' osztályba: ${files: &str}"
+sv = "Flera mods mixin:ar in i '${target: &str}': ${files: &str}"
 [instance.content.install.unable_other_type]
 en = "Unable to install 'other' project type"
 de = "Konnte Projektart „anderes“ nicht installieren"

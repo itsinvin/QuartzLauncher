@@ -28,6 +28,7 @@ mod lockfile;
 mod log_reader;
 mod metadata;
 mod mod_metadata;
+mod mixin_metadata;
 mod modpack_folder_import;
 mod id_slab;
 mod persistent;

@@ -13,7 +13,7 @@ use strum::IntoEnumIterator;
 use crate::{
     component::error_alert::ErrorAlert, entity::{
         DataEntities, instance::ContentStates, metadata::{AsMetadataResult, FrontendMetadata, FrontendMetadataResult}
-    }, icon::QuartzIcon, pages::modrinth_page::{InstalledContent, PrimaryAction, env_display, get_primary_action, icon_for}, format_downloads
+    }, icon::QuartzIcon, pages::modrinth_page::{InstalledContent, PrimaryAction, env_display, get_primary_action, icon_for, remove_installed_content}, format_downloads
 };
 
 pub struct ModrinthProjectPage {
@@ -272,6 +272,25 @@ impl Render for ModrinthProjectPage {
                     })
                     .into_any_element()
             };
+
+            if let Some(install_for) = self.install_for {
+                if !self.all_installed_content.is_empty() {
+                    let content_ids: Vec<_> = self.all_installed_content.iter().map(|content| content.content_id).collect();
+                    let backend_handle = self.data.backend_handle.clone();
+                    link_row = link_row.child(
+                        Button::new("remove_project")
+                            .label(t::instance::content::remove::label())
+                            .icon(QuartzIcon::Trash2)
+                            .danger()
+                            .my_auto()
+                            .px_6()
+                            .tooltip(t::instance::content::remove::tooltip())
+                            .on_click(move |_, _, _| {
+                                remove_installed_content(install_for, content_ids.clone(), &backend_handle);
+                            }),
+                    );
+                }
+            }
             link_row = link_row.child(install_button);
 
             let slug = project.slug.as_deref()

@@ -10,7 +10,7 @@ use gpui_component::{
     ActiveTheme, Disableable, IndexPath, Sizable, button::{Button, ButtonVariants}, h_flex, list::{ListDelegate, ListItem, ListState}, switch::Switch, v_flex
 };
 use parking_lot::Mutex;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use schema::{loader::Loader, text_component::FlatTextComponent};
 use strum::IntoEnumIterator;
 use ustr::Ustr;
@@ -82,6 +82,7 @@ pub struct ContentListDelegate {
     selected: FxHashSet<u64>,
     selected_range: FxHashSet<u64>,
     last_clicked_non_range: Option<u64>,
+    conflict_tooltips: FxHashMap<u64, SharedString>,
 }
 
 impl ContentListDelegate {
@@ -110,7 +111,12 @@ impl ContentListDelegate {
             selected: FxHashSet::default(),
             selected_range: FxHashSet::default(),
             last_clicked_non_range: None,
+            conflict_tooltips: FxHashMap::default(),
         }
+    }
+
+    pub fn set_conflicts(&mut self, tooltips: FxHashMap<u64, SharedString>) {
+        self.conflict_tooltips = tooltips;
     }
 
     pub fn set_sort_options(&mut self, sort_key: InstanceContentSortKey, enabled_first: bool) {
@@ -341,6 +347,16 @@ impl ContentListDelegate {
             .child(controls)
             .child(icon.size_16().min_w_16().min_h_16().grayscale(!summary.enabled))
             .when(!summary.enabled, |this| this.line_through())
+            .when_some(self.conflict_tooltips.get(&element_id).cloned(), |this, tooltip| {
+                this.child(
+                    Button::new(("conflict", element_id))
+                        .icon(QuartzIcon::TriangleAlert)
+                        .danger()
+                        .compact()
+                        .ghost()
+                        .tooltip(tooltip),
+                )
+            })
             .child(desc1)
             .when_some(desc2, |div, desc2| div.child(desc2))
             .border_1()

@@ -14,7 +14,7 @@ use ustr::Ustr;
 use crate::{
     component::error_alert::ErrorAlert, entity::{
         DataEntities, instance::ContentStates, metadata::{AsMetadataResult, FrontendMetadata, FrontendMetadataResult}
-    }, icon::QuartzIcon, interface_config::{CurseforgeFavorite, InterfaceConfig}, pages::page::Page, format_downloads
+    }, icon::QuartzIcon, interface_config::{CurseforgeFavorite, InterfaceConfig}, pages::{modrinth_page::remove_installed_content, page::Page}, format_downloads
 };
 
 pub struct CurseforgeSearchPage {
@@ -663,6 +663,25 @@ impl CurseforgeSearchPage {
                         }
                     });
 
+                let mut action_buttons = h_flex().gap_1().child(install_button);
+                if let Some(install_for) = self.install_for {
+                    if let Some(installed) = self.all_installed_content_by_project.get(&hit.id).filter(|content| !content.is_empty()) {
+                        let content_ids: Vec<_> = installed.iter().map(|content| content.content_id).collect();
+                        let backend_handle = self.data.backend_handle.clone();
+                        action_buttons = action_buttons.child(
+                            Button::new(("remove", index))
+                                .label(t::instance::content::remove::label())
+                                .icon(QuartzIcon::Trash2)
+                                .danger()
+                                .compact()
+                                .tooltip(t::instance::content::remove::tooltip())
+                                .on_click(move |_, _, _| {
+                                    remove_installed_content(install_for, content_ids.clone(), &backend_handle);
+                                }),
+                        );
+                    }
+                }
+
                 let item = h_flex()
                     .rounded_lg()
                     .px_4()
@@ -708,7 +727,7 @@ impl CurseforgeSearchPage {
                                     .children(categories),
                             ),
                     )
-                    .child(v_flex().items_end().gap_2().child(favorite_button).child(downloads).child(install_button));
+                    .child(v_flex().items_end().gap_2().child(favorite_button).child(downloads).child(action_buttons));
 
                 div().pl_3().pt_3().child(item)
             })

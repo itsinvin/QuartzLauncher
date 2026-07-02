@@ -21,6 +21,7 @@ use crate::{
 };
 
 pub mod home_recommendations;
+pub mod content_conflicts;
 pub mod component;
 pub mod data_asset_loader;
 pub mod entity;
