@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use gpui::{percentage, prelude::FluentBuilder as _, Animation, AnimationExt as _, App, SharedString, Transformation, Window};
+use gpui::{percentage, prelude::FluentBuilder as _, Animation, AnimationExt as _, App, IntoElement, SharedString, Transformation, Window};
 use gpui_component::Icon;
 
 use crate::icon::QuartzIcon;
