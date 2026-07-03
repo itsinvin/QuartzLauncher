@@ -1,16 +1,34 @@
 use std::{path::{Path, PathBuf}, sync::Arc};
 
 use bridge::{
-    handle::BackendHandle, install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, InstanceContentSummary, InstanceID}, message::MessageToBackend
+    handle::BackendHandle, install::{ContentDownload, ContentInstall, ContentInstallFile, InstallTarget}, instance::{ContentFolder, InstanceContentSummary, InstanceID}, message::MessageToBackend, meta::MetadataRequest
 };
 use gpui::{prelude::*, *};
 use gpui_component::{
     ActiveTheme as _, IndexPath, Sizable, StyledExt, WindowExt, button::{Button, ButtonVariants}, h_flex, input::SelectAll, list::ListState, notification::{Notification, NotificationType}, select::{Select, SelectEvent, SelectState}, switch::Switch, v_flex
 };
-use schema::{content::{ContentInstallReason, ContentSource}, curseforge::CurseforgeClassId, loader::Loader, modrinth::ModrinthProjectType};
+use schema::{content::{ContentInstallReason, ContentSource}, curseforge::CurseforgeClassId, loader::Loader, modrinth::ModrinthHit};
 use ustr::Ustr;
 
-use crate::{component::{content_list::ContentListDelegate, named_dropdown::{NamedDropdown, NamedDropdownItem}}, content_conflicts::detect_conflicts, entity::instance::{ContentStates, InstanceEntry}, icon::QuartzIcon, interface_config::{InstanceContentSortKey, InterfaceConfig}, root, ui::PageType};
+use crate::{
+    component::{
+        content_list::ContentListDelegate,
+        named_dropdown::{NamedDropdown, NamedDropdownItem},
+        recommendation_cards::{RecommendationCard, recommendation_section},
+    },
+    content_conflicts::detect_conflicts,
+    entity::{
+        instance::{ContentStates, InstanceEntry},
+        metadata::{AsMetadataResult, FrontendMetadata, FrontendMetadataResult},
+    },
+    home_recommendations::{
+        RecommendationContext, RecommendedContentKind, build_search_request, rank_recommendations,
+    },
+    icon::QuartzIcon,
+    interface_config::{InstanceContentSortKey, InterfaceConfig},
+    root,
+    ui::PageType,
+};
 
 pub struct InstanceContentSubpage {
     content_type: ContentType,
@@ -19,11 +37,17 @@ pub struct InstanceContentSubpage {
     instance_version: Ustr,
     instance_name: SharedString,
     backend_handle: BackendHandle,
+    metadata: Entity<FrontendMetadata>,
     content_states: ContentStates,
     content_list: Entity<ListState<ContentListDelegate>>,
     content: Entity<Arc<[InstanceContentSummary]>>,
     sort_dropdown: Entity<SelectState<NamedDropdown<InstanceContentSortKey>>>,
     refresh_generation: u64,
+    recommended_hits: Vec<ModrinthHit>,
+    recommendations_loading: bool,
+    recommendations_error: Option<SharedString>,
+    recommendations_generation: u64,
+    _recommendations_subscription: Option<Subscription>,
     _add_from_file_task: Option<Task<()>>,
 }
 
@@ -69,11 +93,27 @@ impl ContentType {
         }
     }
 
-    fn modrinth_project_type(self) -> ModrinthProjectType {
+    fn recommended_kind(self) -> RecommendedContentKind {
         match self {
-            ContentType::Mods => ModrinthProjectType::Mod,
-            ContentType::ResourcePacks => ModrinthProjectType::Resourcepack,
-            ContentType::Shaders => ModrinthProjectType::Shader,
+            ContentType::Mods => RecommendedContentKind::Mod,
+            ContentType::ResourcePacks => RecommendedContentKind::ResourcePack,
+            ContentType::Shaders => RecommendedContentKind::Shader,
+        }
+    }
+
+    fn recommended_title(self) -> &'static str {
+        match self {
+            ContentType::Mods => t::instance::content::recommended::mods(),
+            ContentType::ResourcePacks => t::instance::content::recommended::resourcepacks(),
+            ContentType::Shaders => t::instance::content::recommended::shaders(),
+        }
+    }
+
+    fn modrinth_project_type(self) -> schema::modrinth::ModrinthProjectType {
+        match self {
+            ContentType::Mods => schema::modrinth::ModrinthProjectType::Mod,
+            ContentType::ResourcePacks => schema::modrinth::ModrinthProjectType::Resourcepack,
+            ContentType::Shaders => schema::modrinth::ModrinthProjectType::Shader,
         }
     }
 
@@ -140,6 +180,7 @@ impl InstanceContentSubpage {
         instance: &Entity<InstanceEntry>,
         content_type: ContentType,
         backend_handle: BackendHandle,
+        metadata: Entity<FrontendMetadata>,
         window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> Self {
@@ -191,6 +232,16 @@ impl InstanceContentSubpage {
             ListState::new(content_list_delegate, window, cx).selectable(false).searchable(true)
         });
 
+        let content_for_recommendations = content.clone();
+        cx.observe(&content_for_recommendations, |this, _, cx| {
+            this.recommendations_generation = this.recommendations_generation.wrapping_add(1);
+            this.recommended_hits.clear();
+            this._recommendations_subscription = None;
+            this.recommendations_loading = false;
+            this.recommendations_error = None;
+            cx.notify();
+        }).detach();
+
         cx.subscribe(&sort_dropdown, |this, _, event: &SelectEvent<NamedDropdown<InstanceContentSortKey>>, cx| {
             let SelectEvent::Confirm(Some(value)) = event else {
                 return;
@@ -223,12 +274,99 @@ impl InstanceContentSubpage {
             instance_version,
             instance_name,
             backend_handle,
+            metadata,
             content_states,
             content_list,
             content,
             sort_dropdown,
             refresh_generation: 0,
+            recommended_hits: Vec::new(),
+            recommendations_loading: false,
+            recommendations_error: None,
+            recommendations_generation: 0,
+            _recommendations_subscription: None,
             _add_from_file_task: None,
+        }
+    }
+
+    fn page_path(&self) -> Vec<PageType> {
+        vec![
+            PageType::Instances,
+            PageType::InstancePage {
+                name: self.instance_name.clone(),
+            },
+        ]
+    }
+
+    fn ensure_recommendations_loaded(&mut self, cx: &mut Context<Self>) {
+        if self.recommendations_loading || self._recommendations_subscription.is_some() {
+            return;
+        }
+
+        let kind = self.content_type.recommended_kind();
+        let exclude_ids = InterfaceConfig::get(cx)
+            .modrinth_favorites
+            .iter()
+            .map(|f| f.project_id.clone())
+            .collect::<Vec<_>>();
+        let ctx = RecommendationContext::from_installed_content(self.content.read(cx), &exclude_ids);
+        let request = build_search_request(
+            self.instance_loader,
+            self.instance_version.as_str(),
+            kind,
+            &ctx,
+        );
+        let generation = self.recommendations_generation;
+
+        self.recommendations_loading = true;
+        self.recommendations_error = None;
+
+        let data = FrontendMetadata::request(&self.metadata, MetadataRequest::ModrinthSearch(request), cx);
+        let subscription = cx.observe(&data, move |page, data, cx| {
+            let result: FrontendMetadataResult<schema::modrinth::ModrinthSearchResult> = data.read(cx).result();
+            match result {
+                FrontendMetadataResult::Loading => {}
+                FrontendMetadataResult::Loaded(search_result) => {
+                    if page.recommendations_generation != generation {
+                        return;
+                    }
+                    let kind = page.content_type.recommended_kind();
+                    let exclude_ids = InterfaceConfig::get(cx)
+                        .modrinth_favorites
+                        .iter()
+                        .map(|f| f.project_id.clone())
+                        .collect::<Vec<_>>();
+                    let content = page.content.read(cx);
+                    let ctx = RecommendationContext::from_installed_content(content, &exclude_ids);
+                    page.recommended_hits =
+                        rank_recommendations(&search_result.hits, kind, &ctx, 6);
+                    page.recommendations_loading = false;
+                    page._recommendations_subscription = None;
+                    cx.notify();
+                }
+                FrontendMetadataResult::Error(error) => {
+                    if page.recommendations_generation != generation {
+                        return;
+                    }
+                    page.recommendations_error = Some(error);
+                    page.recommendations_loading = false;
+                    page._recommendations_subscription = None;
+                    cx.notify();
+                }
+            }
+        });
+
+        self._recommendations_subscription = Some(subscription);
+
+        let result: FrontendMetadataResult<schema::modrinth::ModrinthSearchResult> = data.read(cx).result();
+        if let FrontendMetadataResult::Loaded(search_result) = result {
+            self.recommended_hits = rank_recommendations(&search_result.hits, kind, &ctx, 6);
+            self.recommendations_loading = false;
+            self._recommendations_subscription = None;
+        } else if let FrontendMetadataResult::Error(error) = result {
+            self.recommendations_error = Some(error);
+            self.recommendations_loading = false;
+            self._recommendations_subscription = None;
         }
     }
 
@@ -255,17 +393,30 @@ impl InstanceContentSubpage {
 
 impl Render for InstanceContentSubpage {
     fn render(&mut self, _window: &mut gpui::Window, cx: &mut gpui::Context<Self>) -> impl gpui::IntoElement {
-        let theme = cx.theme();
-
         self.content_states.observe(self.content_type.content_folder());
+        self.ensure_recommendations_loaded(cx);
+
+        let (theme_border, theme_sidebar, theme_warning, theme_muted_foreground, theme_radius, theme_list_hover) = {
+            let theme = cx.theme();
+            (
+                theme.border,
+                theme.sidebar,
+                theme.warning,
+                theme.muted_foreground,
+                theme.radius,
+                theme.list_hover,
+            )
+        };
+
+        let page_path = self.page_path();
 
         let header = h_flex()
             .gap_3()
             .p_3()
             .rounded_lg()
             .border_1()
-            .border_color(theme.border)
-            .bg(theme.sidebar)
+            .border_color(theme_border)
+            .bg(theme_sidebar)
             .child(div().text_xl().line_height(relative(1.35)).child(self.content_type.title()))
             .child({
                 let refresh_generation = self.refresh_generation;
@@ -277,12 +428,16 @@ impl Render for InstanceContentSubpage {
                     .items_center()
                     .px_2()
                     .py_1()
-                    .rounded(theme.radius)
+                    .rounded(theme_radius)
                     .border_1()
-                    .border_color(theme.border)
-                    .hover(|this| this.bg(theme.list_hover))
+                    .border_color(theme_border)
+                    .hover(|this| this.bg(theme_list_hover))
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.refresh_generation = this.refresh_generation.wrapping_add(1);
+                        this.recommendations_generation = this.recommendations_generation.wrapping_add(1);
+                        this.recommended_hits.clear();
+                        this._recommendations_subscription = None;
+                        this.recommendations_loading = false;
                         this.backend_handle.send(MessageToBackend::ReloadContentFolder {
                             id: this.instance,
                             content_folder: this.content_type.content_folder(),
@@ -371,8 +526,8 @@ impl Render for InstanceContentSubpage {
                     .p_3()
                     .rounded_lg()
                     .border_1()
-                    .border_color(theme.warning)
-                    .bg(theme.warning.opacity(0.08))
+                    .border_color(theme_warning)
+                    .bg(theme_warning.opacity(0.08))
                     .child(
                         h_flex()
                             .gap_2()
@@ -382,7 +537,7 @@ impl Render for InstanceContentSubpage {
                             .child(
                                 div()
                                     .text_sm()
-                                    .text_color(theme.muted_foreground)
+                                    .text_color(theme_muted_foreground)
                                     .child(t::instance::content::conflicts::summary(conflicts.messages.len())),
                             ),
                     )
@@ -401,8 +556,8 @@ impl Render for InstanceContentSubpage {
             .py_1()
             .rounded_lg()
             .border_1()
-            .border_color(theme.border)
-            .bg(theme.sidebar)
+            .border_color(theme_border)
+            .bg(theme_sidebar)
             .child(div().child(Select::new(&self.sort_dropdown).small().title_prefix("Sort: ")))
             .child(h_flex().gap_1()
                 .child(div().text_sm().child("Enabled first"))
@@ -434,44 +589,86 @@ impl Render for InstanceContentSubpage {
             .top(px(8.0))
             .right(px(12.0));
 
+        let install_for = Some(self.instance_name.clone());
+        let recommendation_cards: Vec<RecommendationCard> = self
+            .recommended_hits
+            .iter()
+            .map(|hit| RecommendationCard::from_modrinth_hit(hit, install_for.clone(), &page_path))
+            .collect();
+
+        let recommendations = {
+            let content_type = self.content_type;
+            let instance_name = self.instance_name.clone();
+            recommendation_section(
+                self.content_type.recommended_title(),
+                t::instance::content::recommended::empty(),
+                t::instance::content::recommended::browse(),
+                SharedString::from(format!("instance_recommended_{}", u8::from(self.content_type))),
+                SharedString::from(format!("instance_browse_{}", u8::from(self.content_type))),
+                recommendation_cards,
+                &page_path,
+                move |_, window, cx| {
+                    InterfaceConfig::get_mut(cx).modrinth_page_project_type = content_type.modrinth_project_type();
+                    let page = PageType::Modrinth {
+                        installing_for: Some(instance_name.clone()),
+                    };
+                    let path = vec![
+                        PageType::Instances,
+                        PageType::InstancePage {
+                            name: instance_name.clone(),
+                        },
+                    ];
+                    root::switch_page(page, &path, window, cx);
+                },
+                self.recommendations_loading
+                    .then(|| t::instance::content::recommended::loading().into()),
+                self.recommendations_error.clone(),
+                cx,
+            )
+        };
+
         v_flex().p_4().gap_3().size_full()
             .child(header)
             .when_some(conflict_panel, |this, panel| this.child(panel))
-            .child(div()
-                .id("content-list-area")
-                .relative()
-                .drag_over(|style, _: &ExternalPaths, _, cx| {
-                    style.bg(cx.theme().accent)
-                })
-                .on_drop(cx.listener(|this, paths: &ExternalPaths, window, cx| {
-                    this.install_paths(paths.paths(), window, cx);
-                }))
-                .size_full()
-                .border_1()
-                .rounded_lg()
-                .border_color(theme.border)
-                .bg(theme.sidebar)
-                .child(self.content_list.clone())
-                .child(filter_bar_controls)
-                .on_click({
-                    let content_list = self.content_list.clone();
-                    move |_, _, cx| {
-                        cx.update_entity(&content_list, |list, cx| {
-                            list.delegate_mut().clear_selection();
-                            cx.notify();
-                        })
-                    }
-                })
-                .key_context("Input")
-                .on_action({
-                    let content_list = self.content_list.clone();
-                    move |_: &SelectAll, _, cx| {
-                        cx.update_entity(&content_list, |list, cx| {
-                            list.delegate_mut().select_all();
-                            cx.notify();
-                        })
-                    }
-                }),
-        )
+            .child(
+                div()
+                    .id("content-list-area")
+                    .relative()
+                    .flex_1()
+                    .min_h_0()
+                    .drag_over(|style, _: &ExternalPaths, _, cx| {
+                        style.bg(cx.theme().accent)
+                    })
+                    .on_drop(cx.listener(|this, paths: &ExternalPaths, window, cx| {
+                        this.install_paths(paths.paths(), window, cx);
+                    }))
+                    .size_full()
+                    .border_1()
+                    .rounded_lg()
+                    .border_color(theme_border)
+                    .bg(theme_sidebar)
+                    .child(self.content_list.clone())
+                    .child(filter_bar_controls)
+                    .on_click({
+                        let content_list = self.content_list.clone();
+                        move |_, _, cx| {
+                            cx.update_entity(&content_list, |list, cx| {
+                                list.delegate_mut().clear_selection();
+                                cx.notify();
+                            })
+                        }
+                    })
+                    .key_context("Input")
+                    .on_action({
+                        let content_list = self.content_list.clone();
+                        move |_: &SelectAll, _, cx| {
+                            cx.update_entity(&content_list, |list, cx| {
+                                list.delegate_mut().select_all();
+                                cx.notify();
+                            })
+                        }
+                    }),
+            )
+            .child(recommendations)
     }
 }

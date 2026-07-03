@@ -2068,11 +2068,60 @@ en = "Create or import a modpack to see it here."
 de = "Erstelle oder importiere ein Modpack, um es hier zu sehen."
 hu = "Hozz létre vagy importálj modpackot a megjelenítéshez."
 sv = "Skapa eller importera ett modpack för att se det här."
-[home.recommended_mods]
+[home.recommended_modpacks]
+en = "Recommended modpacks"
+de = "Empfohlene Modpacks"
+hu = "Ajánlott modpackok"
+sv = "Rekommenderade modpacks"
+
+[home.browse_modpacks]
+en = "Browse modpacks"
+de = "Modpacks durchsuchen"
+hu = "Modpackok böngészése"
+sv = "Bläddra modpacks"
+
+[home.no_modpack_recommendations]
+en = "Create an instance or install mods to get modpack suggestions."
+de = "Erstelle eine Instanz oder installiere Mods, um Modpack-Vorschläge zu erhalten."
+hu = "Hozz létre példányt vagy telepíts modokat modpack ajánlásokért."
+sv = "Skapa en instans eller installera mods för modpack-förslag."
+
+[instance.content.recommended.mods]
 en = "Recommended mods"
 de = "Empfohlene Mods"
 hu = "Ajánlott modok"
 sv = "Rekommenderade mods"
+
+[instance.content.recommended.resourcepacks]
+en = "Recommended resource packs"
+de = "Empfohlene Resource Packs"
+hu = "Ajánlott resource packok"
+sv = "Rekommenderade resurspaket"
+
+[instance.content.recommended.shaders]
+en = "Recommended shaders"
+de = "Empfohlene Shader"
+hu = "Ajánlott shaderek"
+sv = "Rekommenderade shaders"
+
+[instance.content.recommended.browse]
+en = "Browse Modrinth"
+de = "Modrinth durchsuchen"
+hu = "Modrinth böngészése"
+sv = "Bläddra Modrinth"
+
+[instance.content.recommended.empty]
+en = "Install more content to get tailored suggestions."
+de = "Installiere mehr Inhalte für passende Vorschläge."
+hu = "Telepíts több tartalmat személyre szabott ajánlásokért."
+sv = "Installera mer innehåll för skräddarsydda förslag."
+
+[instance.content.recommended.loading]
+en = "Finding recommendations..."
+de = "Suche Empfehlungen..."
+hu = "Ajánlások keresése..."
+sv = "Hittar rekommendationer..."
+
 [home.browse_mods]
 en = "Browse Modrinth"
 de = "Modrinth durchsuchen"

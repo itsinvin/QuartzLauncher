@@ -443,11 +443,13 @@ pub mod file_system {
 pub mod home {
     pub fn get(key: &str) -> Option<&'static str> {
         match key {
+            "browse_modpacks" => Some(browse_modpacks()),
             "browse_mods" => Some(browse_mods()),
             "favorite_mods" => Some(favorite_mods()),
             "guest" => Some(guest()),
             "loading_recommendations" => Some(loading_recommendations()),
             "no_favorites" => Some(no_favorites()),
+            "no_modpack_recommendations" => Some(no_modpack_recommendations()),
             "no_modpacks" => Some(no_modpacks()),
             "no_recent" => Some(no_recent()),
             "no_recent_skins" => Some(no_recent_skins()),
@@ -455,7 +457,7 @@ pub mod home {
             "play_now" => Some(play_now()),
             "quick_play" => Some(quick_play()),
             "recent_skins" => Some(recent_skins()),
-            "recommended_mods" => Some(recommended_mods()),
+            "recommended_modpacks" => Some(recommended_modpacks()),
             "refresh" => Some(refresh()),
             "refresh_hint" => Some(refresh_hint()),
             "stat_instances" => Some(stat_instances()),
@@ -468,6 +470,14 @@ pub mod home {
             "welcome_title" => Some(welcome_title()),
             "your_modpacks" => Some(your_modpacks()),
             _ => None,
+        }
+    }
+    pub fn browse_modpacks() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Modpacks durchsuchen",
+            2 => "Modpackok böngészése",
+            3 => "Bläddra modpacks",
+            _ => "Browse modpacks",
         }
     }
     pub fn browse_mods() -> &'static str {
@@ -516,6 +526,14 @@ pub mod home {
             2 => "Csillagozd meg a modokat a Modrinth/CurseForge oldalakon a kedvencek megjelenítéséhez.",
             3 => "Stjärnmarkera mods på Modrinth eller CurseForge för att se favoriter här.",
             _ => "Star mods on Modrinth or CurseForge to see your favorites here.",
+        }
+    }
+    pub fn no_modpack_recommendations() -> &'static str {
+        match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+            1 => "Erstelle eine Instanz oder installiere Mods, um Modpack-Vorschläge zu erhalten.",
+            2 => "Hozz létre példányt vagy telepíts modokat modpack ajánlásokért.",
+            3 => "Skapa en instans eller installera mods för modpack-förslag.",
+            _ => "Create an instance or install mods to get modpack suggestions.",
         }
     }
     pub fn no_modpacks() -> &'static str {
@@ -574,12 +592,12 @@ pub mod home {
             _ => "Recent skins",
         }
     }
-    pub fn recommended_mods() -> &'static str {
+    pub fn recommended_modpacks() -> &'static str {
         match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
-            1 => "Empfohlene Mods",
-            2 => "Ajánlott modok",
-            3 => "Rekommenderade mods",
-            _ => "Recommended mods",
+            1 => "Empfohlene Modpacks",
+            2 => "Ajánlott modpackok",
+            3 => "Rekommenderade modpacks",
+            _ => "Recommended modpacks",
         }
     }
     pub fn refresh() -> &'static str {
@@ -1452,6 +1470,68 @@ pub mod instance {
                 2 => "Oldal megnyitása",
                 3 => "Öppna sida",
                 _ => "Open Page",
+            }
+        }
+        #[rustfmt::skip]
+        pub mod recommended {
+            pub fn get(key: &str) -> Option<&'static str> {
+                match key {
+                    "browse" => Some(browse()),
+                    "empty" => Some(empty()),
+                    "loading" => Some(loading()),
+                    "mods" => Some(mods()),
+                    "resourcepacks" => Some(resourcepacks()),
+                    "shaders" => Some(shaders()),
+                    _ => None,
+                }
+            }
+            pub fn browse() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Modrinth durchsuchen",
+                    2 => "Modrinth böngészése",
+                    3 => "Bläddra Modrinth",
+                    _ => "Browse Modrinth",
+                }
+            }
+            pub fn empty() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Installiere mehr Inhalte für passende Vorschläge.",
+                    2 => "Telepíts több tartalmat személyre szabott ajánlásokért.",
+                    3 => "Installera mer innehåll för skräddarsydda förslag.",
+                    _ => "Install more content to get tailored suggestions.",
+                }
+            }
+            pub fn loading() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Suche Empfehlungen...",
+                    2 => "Ajánlások keresése...",
+                    3 => "Hittar rekommendationer...",
+                    _ => "Finding recommendations...",
+                }
+            }
+            pub fn mods() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Empfohlene Mods",
+                    2 => "Ajánlott modok",
+                    3 => "Rekommenderade mods",
+                    _ => "Recommended mods",
+                }
+            }
+            pub fn resourcepacks() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Empfohlene Resource Packs",
+                    2 => "Ajánlott resource packok",
+                    3 => "Rekommenderade resurspaket",
+                    _ => "Recommended resource packs",
+                }
+            }
+            pub fn shaders() -> &'static str {
+                match crate::LANG.load(std::sync::atomic::Ordering::Relaxed) {
+                    1 => "Empfohlene Shader",
+                    2 => "Ajánlott shaderek",
+                    3 => "Rekommenderade shaders",
+                    _ => "Recommended shaders",
+                }
             }
         }
         pub fn refresh() -> &'static str {

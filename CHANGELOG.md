@@ -4,6 +4,15 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.37] - 2026-07-02
+
+### Changed
+- Home page now shows Recommended modpacks instead of favorite/recommended mods
+- Recommended mods, resource packs, and shaders appear at the bottom of each instance content tab
+
+### Added
+- Modpack recommendation algorithm based on your instances and installed mods/modpacks
+
 ## [5.2.36] - 2026-07-02
 
 ### Added

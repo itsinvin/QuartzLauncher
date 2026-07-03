@@ -1,3 +1,4 @@
+pub mod recommendation_cards;
 pub mod quartz_logo;
 pub mod animation;
 pub mod content_list;
