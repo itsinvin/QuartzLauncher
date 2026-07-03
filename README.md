@@ -9,17 +9,17 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.36` |
-| **Last built** | 2026-07-02 23:39 UTC |
-| **Latest release** | [v5.2.36](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.36) |
-| **Commit** | `69112235` |
+| **Version** | `5.2.37` |
+| **Last built** | 2026-07-03 00:28 UTC |
+| **Latest release** | [v5.2.37](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.37) |
+| **Commit** | `2d3db9cf` |
 | **Changelog date** | 2026-07-02 |
 
-### Recent changes (5.2.36)
+### Recent changes (5.2.37)
 
-- Remove installed mods from Modrinth/CurseForge browse pages when adding to an instance
-- Pre-launch conflict detection on Mods, Resource Packs, and Shaders tabs (duplicate IDs, projects, files, names, loader mismatches)
-- Mixin conflict detection for Fabric mods (multiple mods targeting the same class)
+- Home page now shows Recommended modpacks instead of favorite/recommended mods
+- Recommended mods, resource packs, and shaders appear at the bottom of each instance content tab
+- Modpack recommendation algorithm based on your instances and installed mods/modpacks
 
 <!-- readme:build-info:end -->
 
