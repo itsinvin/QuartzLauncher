@@ -254,7 +254,14 @@ impl InstanceSubpageCache {
             InstanceSubpageType::Mods => {
                 if self.mods.is_none() {
                     self.mods = Some(cx.new(|cx| {
-                        InstanceContentSubpage::new(instance, ContentType::Mods, backend_handle.clone(), window, cx)
+                        InstanceContentSubpage::new(
+                            instance,
+                            ContentType::Mods,
+                            backend_handle.clone(),
+                            data.metadata.clone(),
+                            window,
+                            cx,
+                        )
                     }));
                 }
                 InstanceSubpage::Mods(self.mods.clone().unwrap())
@@ -262,7 +269,14 @@ impl InstanceSubpageCache {
             InstanceSubpageType::ResourcePacks => {
                 if self.resource_packs.is_none() {
                     self.resource_packs = Some(cx.new(|cx| {
-                        InstanceContentSubpage::new(instance, ContentType::ResourcePacks, backend_handle.clone(), window, cx)
+                        InstanceContentSubpage::new(
+                            instance,
+                            ContentType::ResourcePacks,
+                            backend_handle.clone(),
+                            data.metadata.clone(),
+                            window,
+                            cx,
+                        )
                     }));
                 }
                 InstanceSubpage::ResourcePacks(self.resource_packs.clone().unwrap())
@@ -270,7 +284,14 @@ impl InstanceSubpageCache {
             InstanceSubpageType::Shaders => {
                 if self.shaders.is_none() {
                     self.shaders = Some(cx.new(|cx| {
-                        InstanceContentSubpage::new(instance, ContentType::Shaders, backend_handle.clone(), window, cx)
+                        InstanceContentSubpage::new(
+                            instance,
+                            ContentType::Shaders,
+                            backend_handle.clone(),
+                            data.metadata.clone(),
+                            window,
+                            cx,
+                        )
                     }));
                 }
                 InstanceSubpage::Shaders(self.shaders.clone().unwrap())

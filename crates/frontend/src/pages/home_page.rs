@@ -24,6 +24,7 @@ use crate::{
         instance_list::{InstanceList, instance_is_active},
         player_model_widget::PlayerModelWidget,
         quartz_logo::QuartzLogo,
+        recommendation_cards::{RecommendationCard, recommendation_section},
         responsive_grid::ResponsiveGrid,
     },
     entity::{
@@ -32,9 +33,11 @@ use crate::{
         instance::{InstanceAddedEvent, InstanceEntry, InstanceModifiedEvent, InstanceRemovedEvent},
         metadata::{AsMetadataResult, FrontendMetadata, FrontendMetadataResult},
     },
-    home_recommendations::{RecommendationContext, build_search_request, rank_recommendations},
+    home_recommendations::{
+        RecommendationContext, RecommendedContentKind, build_search_request, rank_recommendations,
+    },
     icon::QuartzIcon,
-    interface_config::{skin_fingerprint, CurseforgeFavorite, InterfaceConfig, ModrinthFavorite},
+    interface_config::{skin_fingerprint, InterfaceConfig},
     pages::page::Page,
     png_render_cache,
     root,
@@ -56,7 +59,7 @@ pub struct HomePage {
     account_skin_variant: SkinVariant,
     request_account_skin: Option<Task<()>>,
     refresh_generation: u64,
-    recommended_hits: Vec<ModrinthHit>,
+    recommended_modpack_hits: Vec<ModrinthHit>,
     recommendations_loading: bool,
     recommendations_error: Option<SharedString>,
     recommendations_generation: u64,
@@ -88,7 +91,7 @@ impl HomePage {
             account_skin_variant: SkinVariant::Classic,
             request_account_skin: None,
             refresh_generation: 0,
-            recommended_hits: Vec::new(),
+            recommended_modpack_hits: Vec::new(),
             recommendations_loading: false,
             recommendations_error: None,
             recommendations_generation: 0,
@@ -165,23 +168,32 @@ impl HomePage {
         }
     }
 
-    fn ensure_recommendations_loaded(&mut self, instances: &[InstanceEntry], cx: &mut Context<Self>) {
+    fn ensure_modpack_recommendations_loaded(&mut self, instances: &[InstanceEntry], cx: &mut Context<Self>) {
         if self.recommendations_loading || self._recommendations_subscription.is_some() {
             return;
         }
 
-        let Some(instance) = instances.first() else {
-            self.recommended_hits.clear();
+        let Some(instance) = instances
+            .iter()
+            .max_by_key(|entry| entry.playtime.last_played_unix_ms)
+            .or_else(|| instances.first())
+        else {
+            self.recommended_modpack_hits.clear();
             return;
         };
 
-        let favorite_ids = InterfaceConfig::get(cx)
+        let exclude_ids = InterfaceConfig::get(cx)
             .modrinth_favorites
             .iter()
             .map(|f| f.project_id.clone())
             .collect::<Vec<_>>();
-        let ctx = RecommendationContext::from_instances(instances, &favorite_ids, cx);
-        let request = build_search_request(instance, &ctx);
+        let ctx = RecommendationContext::for_modpacks(instances, &exclude_ids, cx);
+        let request = build_search_request(
+            instance.configuration.loader,
+            instance.configuration.minecraft_version.as_str(),
+            RecommendedContentKind::Modpack,
+            &ctx,
+        );
         let generation = self.recommendations_generation;
 
         self.recommendations_loading = true;
@@ -196,14 +208,19 @@ impl HomePage {
                     if page.recommendations_generation != generation {
                         return;
                     }
-                    let favorite_ids = InterfaceConfig::get(cx)
+                    let exclude_ids = InterfaceConfig::get(cx)
                         .modrinth_favorites
                         .iter()
                         .map(|f| f.project_id.clone())
                         .collect::<Vec<_>>();
                     let instances = page.sorted_instances(cx);
-                    let ctx = RecommendationContext::from_instances(&instances, &favorite_ids, cx);
-                    page.recommended_hits = rank_recommendations(&search_result.hits, &ctx, 6);
+                    let ctx = RecommendationContext::for_modpacks(&instances, &exclude_ids, cx);
+                    page.recommended_modpack_hits = rank_recommendations(
+                        &search_result.hits,
+                        RecommendedContentKind::Modpack,
+                        &ctx,
+                        6,
+                    );
                     page.recommendations_loading = false;
                     page._recommendations_subscription = None;
                     cx.notify();
@@ -224,7 +241,12 @@ impl HomePage {
 
         let result: FrontendMetadataResult<schema::modrinth::ModrinthSearchResult> = data.read(cx).result();
         if let FrontendMetadataResult::Loaded(search_result) = result {
-            self.recommended_hits = rank_recommendations(&search_result.hits, &ctx, 6);
+            self.recommended_modpack_hits = rank_recommendations(
+                &search_result.hits,
+                RecommendedContentKind::Modpack,
+                &ctx,
+                6,
+            );
             self.recommendations_loading = false;
             self._recommendations_subscription = None;
         } else if let FrontendMetadataResult::Error(error) = result {
@@ -286,7 +308,7 @@ impl Page for HomePage {
             .on_click(cx.listener(|this, _, _window, cx| {
                 this.refresh_generation = this.refresh_generation.wrapping_add(1);
                 this.recommendations_generation = this.recommendations_generation.wrapping_add(1);
-                this.recommended_hits.clear();
+                this.recommended_modpack_hits.clear();
                 this._recommendations_subscription = None;
                 this.recommendations_loading = false;
                 this.load_account_skin(cx);
@@ -360,14 +382,12 @@ impl Render for HomePage {
                 .into_any_element();
         }
 
-        self.ensure_recommendations_loaded(&instances, cx);
+        self.ensure_modpack_recommendations_loaded(&instances, cx);
 
         let stats = self.aggregate_stats(&instances, cx);
         let last_played = instances.first().cloned();
         let showcase = instances.iter().take(4).cloned().collect::<Vec<_>>();
         let hide_usernames = InterfaceConfig::get(cx).hide_usernames;
-        let modrinth_favorites = InterfaceConfig::get(cx).modrinth_favorites.clone();
-        let curseforge_favorites = InterfaceConfig::get(cx).curseforge_favorites.clone();
         let account_name = self
             .data
             .accounts
@@ -382,8 +402,7 @@ impl Render for HomePage {
         let hero = self.hero_section(last_played.clone(), &account_name, refresh_generation, cx);
         let stats_panel = self.stats_section(&stats, cx);
         let modpacks = self.modpack_section(&showcase, cx);
-        let favorites = self.favorites_section(modrinth_favorites, curseforge_favorites, cx);
-        let recommendations = self.recommended_mods_section(cx);
+        let recommended_modpacks = self.recommended_modpacks_section(cx);
 
         v_flex()
             .size_full()
@@ -392,8 +411,7 @@ impl Render for HomePage {
             .child(hero)
             .child(stats_panel)
             .child(modpacks)
-            .child(favorites)
-            .child(recommendations)
+            .child(recommended_modpacks)
             .into_any_element()
     }
 }
@@ -803,245 +821,29 @@ impl HomePage {
             .into_any_element()
     }
 
-    fn favorites_section(
-        &self,
-        modrinth_favorites: Vec<ModrinthFavorite>,
-        curseforge_favorites: Vec<CurseforgeFavorite>,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let mut cards = Vec::new();
-
-        for favorite in modrinth_favorites.into_iter().take(6) {
-            cards.push(ModCard {
-                title: favorite.title.clone().into(),
-                subtitle: favorite.author.clone().into(),
-                thumbnail: favorite.icon_url.map(SharedString::from),
-                page: PageType::ModrinthProject {
-                    project_id: favorite.project_id.clone().into(),
-                    project_title: favorite.title.clone().into(),
-                    install_for: None,
-                },
-            });
-        }
-
-        for favorite in curseforge_favorites.into_iter().take(6) {
-            if cards.len() >= 6 {
-                break;
-            }
-            cards.push(ModCard {
-                title: favorite.name.clone().into(),
-                subtitle: favorite.summary.clone().into(),
-                thumbnail: favorite.thumbnail_url.map(SharedString::from),
-                page: PageType::Curseforge { installing_for: None },
-            });
-        }
-
-        self.render_mod_cards_section(
-            t::home::favorite_mods(),
-            t::home::no_favorites(),
-            SharedString::from("home_favorites"),
-            SharedString::from("home_view_favorites"),
-            |_, window, cx| {
-                InterfaceConfig::get_mut(cx).modrinth_favorites_only = true;
-                root::switch_page(PageType::Modrinth { installing_for: None }, &[PageType::Home], window, cx);
-            },
-            cards,
-            cx,
-        )
-    }
-
-    fn recommended_mods_section(&self, cx: &mut Context<Self>) -> AnyElement {
-        let cards: Vec<ModCard> = self
-            .recommended_hits
+    fn recommended_modpacks_section(&self, cx: &mut Context<Self>) -> AnyElement {
+        let cards: Vec<RecommendationCard> = self
+            .recommended_modpack_hits
             .iter()
-            .map(|hit| {
-                let project_id = hit.project_id.to_string();
-                let project_title = hit.title.as_deref().unwrap_or("").to_string();
-                ModCard {
-                    title: project_title.clone().into(),
-                    subtitle: hit.author.to_string().into(),
-                    thumbnail: hit.icon_url.clone().map(|url| SharedString::from(url.to_string())),
-                    page: PageType::ModrinthProject {
-                        project_id: project_id.into(),
-                        project_title: project_title.into(),
-                        install_for: None,
-                    },
-                }
-            })
+            .map(|hit| RecommendationCard::from_modrinth_hit(hit, None, &[PageType::Home]))
             .collect();
 
-        let mut section = self.render_mod_cards_section(
-            t::home::recommended_mods(),
-            t::home::no_recommendations(),
-            SharedString::from("home_recommended"),
-            SharedString::from("home_browse_mods"),
+        recommendation_section(
+            t::home::recommended_modpacks(),
+            t::home::no_modpack_recommendations(),
+            t::home::browse_modpacks(),
+            SharedString::from("home_recommended_modpacks"),
+            SharedString::from("home_browse_modpacks"),
+            cards,
+            &[PageType::Home],
             |_, window, cx| {
+                InterfaceConfig::get_mut(cx).modrinth_page_project_type = schema::modrinth::ModrinthProjectType::Modpack;
                 root::switch_page(PageType::Modrinth { installing_for: None }, &[PageType::Home], window, cx);
             },
-            cards,
+            self.recommendations_loading.then(|| t::home::loading_recommendations().into()),
+            self.recommendations_error.clone(),
             cx,
-        );
-
-        if self.recommendations_loading {
-            let theme = cx.theme();
-            section = v_flex()
-                .w_full()
-                .gap_3()
-                .child(section)
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(theme.muted_foreground)
-                        .child(t::home::loading_recommendations()),
-                )
-                .into_any_element();
-        } else if let Some(error) = &self.recommendations_error {
-            let theme = cx.theme();
-            section = v_flex()
-                .w_full()
-                .gap_3()
-                .child(section)
-                .child(div().text_sm().text_color(theme.muted_foreground).child(error.clone()))
-                .into_any_element();
-        }
-
-        section
-    }
-
-    fn render_mod_cards_section(
-        &self,
-        title: impl Into<SharedString>,
-        empty_message: impl Into<SharedString>,
-        section_id: SharedString,
-        action_id: SharedString,
-        on_action: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-        cards: Vec<ModCard>,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let card_elements = cards
-            .into_iter()
-            .enumerate()
-            .map(|(index, card)| card.render(section_id.clone(), index, cx))
-            .collect::<Vec<_>>();
-
-        let theme = cx.theme();
-        let empty_radius = theme.radius;
-        let empty_border = theme.border;
-        let empty_muted = theme.muted_foreground;
-        let has_cards = !card_elements.is_empty();
-        let title = title.into();
-        let empty_message = empty_message.into();
-        let action_button_label = if section_id.as_ref() == "home_favorites" {
-            t::home::view_favorites()
-        } else {
-            t::home::browse_mods()
-        };
-
-        v_flex()
-            .w_full()
-            .gap_3()
-            .child(
-                h_flex()
-                    .justify_between()
-                    .items_center()
-                    .child(div().text_lg().font_semibold().child(title))
-                    .child(
-                        Button::new(action_id)
-                            .compact()
-                            .small()
-                            .info()
-                            .label(action_button_label)
-                            .on_click(on_action),
-                    ),
-            )
-            .when(!has_cards, |this| {
-                this.child(
-                    div()
-                        .p_4()
-                        .rounded(empty_radius)
-                        .border_1()
-                        .border_color(empty_border)
-                        .text_color(empty_muted)
-                        .child(empty_message),
-                )
-            })
-            .when(has_cards, |this| {
-                this.child(
-                    ResponsiveGrid::new(Size::new(AvailableSpace::Definite(px(220.0)), AvailableSpace::MinContent))
-                        .w_full()
-                        .gap_3()
-                        .children(card_elements),
-                )
-            })
-            .into_any_element()
-    }
-}
-
-struct ModCard {
-    title: SharedString,
-    subtitle: SharedString,
-    thumbnail: Option<SharedString>,
-    page: PageType,
-}
-
-impl ModCard {
-    fn render(self, section_id: SharedString, index: usize, cx: &mut App) -> AnyElement {
-        let theme = cx.theme();
-        let card_muted = theme.muted;
-        let card_border = theme.border;
-        let card_radius = theme.radius;
-        let card_secondary = theme.secondary;
-        let card_list_hover = theme.list_hover;
-        let card_sidebar_primary = theme.sidebar_primary;
-        let card_muted_foreground = theme.muted_foreground;
-        let page = self.page;
-        h_flex()
-            .id((section_id, index))
-            .gap_3()
-            .p_3()
-            .min_w_48()
-            .bg(card_muted)
-            .border_1()
-            .border_color(card_border)
-            .rounded(card_radius)
-            .hover(|this| this.bg(card_list_hover).border_color(card_sidebar_primary.opacity(0.6)))
-            .cursor_pointer()
-            .on_click(move |_, window, cx| {
-                root::switch_page(page.clone(), &[PageType::Home], window, cx);
-            })
-            .child({
-                if let Some(url) = self.thumbnail {
-                    gpui::img(SharedUri::from(url))
-                        .size_10()
-                        .rounded(card_radius)
-                        .into_any_element()
-                } else {
-                    div()
-                        .size_10()
-                        .rounded(card_radius)
-                        .bg(card_secondary)
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .child(Icon::new(QuartzIcon::Box).size_4())
-                        .into_any_element()
-                }
-            })
-            .child(
-                v_flex()
-                    .flex_1()
-                    .gap_0p5()
-                    .overflow_hidden()
-                    .child(div().text_sm().font_medium().truncate().child(self.title))
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(card_muted_foreground)
-                            .line_clamp(2)
-                            .child(self.subtitle),
-                    ),
-            )
-            .into_any_element()
+        )
     }
 }
 
