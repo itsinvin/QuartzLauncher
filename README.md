@@ -10,9 +10,9 @@ This section is updated automatically after every build.
 | | |
 |---|---|
 | **Version** | `5.2.37` |
-| **Last built** | 2026-07-03 00:28 UTC |
+| **Last built** | 2026-07-03 00:41 UTC |
 | **Latest release** | [v5.2.37](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.37) |
-| **Commit** | `2d3db9cf` |
+| **Commit** | `f6f37840` |
 | **Changelog date** | 2026-07-02 |
 
 ### Recent changes (5.2.37)
