@@ -6,7 +6,7 @@ default-members = ["crates/quartz_launcher"]
 
 [workspace.package]
 edition = "2024"
-version = "5.2.37"
+version = "5.2.38"
 
 [profile.release]
 debug = "limited"

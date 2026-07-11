@@ -1,5 +1,5 @@
 use std::{
-    borrow::Cow, cmp::Ordering, collections::{BTreeSet, HashMap, HashSet}, ffi::{OsStr, OsString}, fs::File, io::Write, path::{Path, PathBuf}, process::Stdio, sync::{Arc, OnceLock, atomic::AtomicBool}
+    borrow::Cow, cmp::Ordering, collections::{BTreeSet, HashMap, HashSet}, ffi::{OsStr, OsString}, fs::File, io::{ErrorKind, Write}, path::{Path, PathBuf}, process::Stdio, sync::{Arc, OnceLock, atomic::AtomicBool}
 };
 
 use bridge::{
@@ -65,8 +65,11 @@ pub enum LaunchError {
     InvalidInstanceName(&'static str),
     #[error("Invalid game directory path: {0}")]
     InvalidGamePath(Cow<'static, str>),
-    #[error("Error running forge post processor")]
-    ForgePostProcessorError,
+    #[error("Error running forge post processor `{processor}` (exit {exit_code})")]
+    ForgePostProcessorError {
+        processor: String,
+        exit_code: i32,
+    },
     #[error("Cancelled by user")]
     CancelledByUser,
     #[error("Loader supports the wrong version of Minecraft: {0}")]
@@ -222,9 +225,12 @@ impl Launcher {
                     let output_path = path.to_path(&natives_dir);
                     match file.kind() {
                         rc_zip_sync::rc_zip::EntryKind::Directory => {
-                            let _ = std::fs::create_dir(output_path);
+                            let _ = std::fs::create_dir_all(&output_path);
                         },
                         rc_zip_sync::rc_zip::EntryKind::File => {
+                            if let Some(parent) = output_path.parent() {
+                                let _ = std::fs::create_dir_all(parent);
+                            }
                             let Ok(mut outfile) = std::fs::File::create(&output_path) else {
                                 continue;
                             };
@@ -670,7 +676,12 @@ impl Launcher {
 
         self.load_libraries(http_client, &libraries, progress_trackers, launch_tracker).await?;
 
-        let forge_temp = self.directories.temp_dir.join("forge_installer");
+        let forge_temp = self.directories.temp_dir.join(format!(
+            "forge_installer_{}_{}",
+            instance_info.minecraft_version.as_str(),
+            std::process::id()
+        ));
+        let _ = std::fs::create_dir_all(&forge_temp);
 
         let mut data = FxHashMap::default();
 
@@ -811,7 +822,7 @@ impl Launcher {
                 } else if &**arg == "{ROOT}/libraries/" {
                     Cow::Borrowed(self.directories.libraries_dir.as_os_str())
                 } else {
-                    expand_forge_argument(&arg, &data)
+                    expand_forge_argument(&arg, &data)?
                 };
                 command.arg(expanded);
             }
@@ -820,7 +831,10 @@ impl Launcher {
             let exit_code = child.wait()?;
 
             if !exit_code.success() {
-                return Err(LaunchError::ForgePostProcessorError);
+                return Err(LaunchError::ForgePostProcessorError {
+                    processor: processor.jar.to_string(),
+                    exit_code: exit_code.code().unwrap_or(-1),
+                });
             }
 
             processor_tracker.add_count(1);
@@ -1206,8 +1220,12 @@ impl Launcher {
                 return false;
             }
             for (key, value) in outputs {
-                let key = expand_forge_argument(key, data);
-                let value = expand_forge_argument(value, data);
+                let Ok(key) = expand_forge_argument(key, data) else {
+                    return false;
+                };
+                let Ok(value) = expand_forge_argument(value, data) else {
+                    return false;
+                };
 
                 let Some(value) = value.to_str() else {
                     return false;
@@ -1652,10 +1670,13 @@ async fn do_java_runtime_load(
 
 #[derive(thiserror::Error, Debug)]
 pub enum LoadAssetObjectsError {
-    #[error("Failed to load remote content")]
+    #[error("Failed to load remote content:\n{0}")]
     Reqwest(#[from] reqwest::Error),
-    #[error("Failed to perform I/O operation")]
-    IoError(#[from] std::io::Error),
+    #[error("Failed to perform I/O operation for {path}:\n{source}")]
+    IoError {
+        path: String,
+        source: std::io::Error,
+    },
     #[error("Hash isn't a valid sha1 hash\n{0}")]
     InvalidHash(Ustr),
     #[error("Downloaded file had wrong response size. Expected {0}, got {1}")]
@@ -1664,6 +1685,15 @@ pub enum LoadAssetObjectsError {
     WrongHash,
     #[error("Failed to load metadata:\n{0}")]
     MetaLoadError(#[from] MetaLoadError),
+}
+
+impl LoadAssetObjectsError {
+    fn io(path: impl Into<String>, source: std::io::Error) -> Self {
+        Self::IoError {
+            path: path.into(),
+            source,
+        }
+    }
 }
 
 async fn do_asset_objects_load(
@@ -1681,7 +1711,8 @@ async fn do_asset_objects_load(
 
     let mut tasks = Vec::new();
 
-    let _ = std::fs::create_dir_all(&assets_objects_dir);
+    std::fs::create_dir_all(&assets_objects_dir)
+        .map_err(|source| LoadAssetObjectsError::io(assets_objects_dir.display().to_string(), source))?;
 
     for (_, asset) in &assets_index.objects {
         let mut expected_hash = [0u8; 20];
@@ -1690,7 +1721,8 @@ async fn do_asset_objects_load(
         };
 
         let mut path = assets_objects_dir.join(&asset.hash[..2]);
-        let _ = std::fs::create_dir(&path);
+        std::fs::create_dir_all(&path)
+            .map_err(|source| LoadAssetObjectsError::io(path.display().to_string(), source))?;
         path.push(asset.hash.as_str());
 
         total_size += asset.size;
@@ -1702,6 +1734,7 @@ async fn do_asset_objects_load(
         let url = format!("https://resources.download.minecraft.net/{}/{}", &asset.hash[..2], &asset.hash);
 
         let task = async move {
+            let path_display = path.display().to_string();
             let valid_hash_on_disk = {
                 let path = path.clone();
                 let permit = disk_semaphore.acquire().await.unwrap();
@@ -1748,7 +1781,12 @@ async fn do_asset_objects_load(
                 return Err(LoadAssetObjectsError::WrongHash);
             }
 
-            tokio::fs::write(path.clone(), &*bytes).await?;
+            let write_path = path.clone();
+            let write_bytes = Arc::clone(&bytes);
+            tokio::task::spawn_blocking(move || crate::write_safe(&write_path, &write_bytes))
+                .await
+                .unwrap()
+                .map_err(|source| LoadAssetObjectsError::io(path_display, source))?;
             assets_tracker.add_count(asset.size as usize);
             assets_tracker.notify();
             Ok(())
@@ -1766,10 +1804,13 @@ async fn do_asset_objects_load(
 
 #[derive(thiserror::Error, Debug)]
 pub enum LoadLibrariesError {
-    #[error("Failed to load remote content")]
+    #[error("Failed to load remote content:\n{0}")]
     Reqwest(#[from] reqwest::Error),
-    #[error("Failed to perform I/O operation")]
-    IoError(#[from] std::io::Error),
+    #[error("Failed to perform I/O operation for {path}:\n{source}")]
+    IoError {
+        path: String,
+        source: std::io::Error,
+    },
     #[error("Hash isn't a valid sha1 hash\n{0}")]
     InvalidHash(Ustr),
     #[error("Downloaded file had wrong response size. Expected {0}, got {1}")]
@@ -1778,6 +1819,17 @@ pub enum LoadLibrariesError {
     WrongHash,
     #[error("Illegal library path {0}, directory traversal?")]
     IllegalLibraryPath(Ustr),
+    #[error("Library has no download URL and is missing on disk: {0}")]
+    MissingLocalLibrary(Ustr),
+}
+
+impl LoadLibrariesError {
+    fn io(path: impl Into<String>, source: std::io::Error) -> Self {
+        Self::IoError {
+            path: path.into(),
+            source,
+        }
+    }
 }
 
 async fn do_libraries_load(
@@ -1795,9 +1847,16 @@ async fn do_libraries_load(
 
     let mut tasks = Vec::new();
 
-    let _ = std::fs::create_dir_all(&libraries_dir);
+    std::fs::create_dir_all(&libraries_dir)
+        .map_err(|source| LoadLibrariesError::io(libraries_dir.display().to_string(), source))?;
 
+    // Deduplicate by path so concurrent writes cannot race on the same jar.
+    let mut unique_artifacts: HashMap<Ustr, GameLibraryArtifact> = HashMap::new();
     for artifact in artifacts {
+        unique_artifacts.entry(artifact.path).or_insert_with(|| artifact.clone());
+    }
+
+    for artifact in unique_artifacts.into_values() {
         let expected_hash = if let Some(sha1) = &artifact.sha1 {
             let mut expected_hash = [0u8; 20];
             let Ok(_) = hex::decode_to_slice(sha1.as_str(), &mut expected_hash) else {
@@ -1808,7 +1867,7 @@ async fn do_libraries_load(
             None
         };
 
-        if !path_is_normal(artifact.path.as_str()) {
+        if artifact.path.as_str().is_empty() || !path_is_normal(artifact.path.as_str()) {
             return Err(LoadLibrariesError::IllegalLibraryPath(artifact.path));
         }
 
@@ -1816,7 +1875,9 @@ async fn do_libraries_load(
         let Some(artifact_path_parent) = artifact_path.parent() else {
             return Err(LoadLibrariesError::IllegalLibraryPath(artifact.path));
         };
-        let _ = std::fs::create_dir_all(artifact_path_parent);
+        // Ensure parents exist before concurrent writes; retry briefly for Windows mkdir races.
+        ensure_dir_all_retry(artifact_path_parent)
+            .map_err(|source| LoadLibrariesError::io(artifact_path_parent.display().to_string(), source))?;
 
         let tracker_size = artifact.size.unwrap_or(1000000);
         total_size += tracker_size;
@@ -1826,6 +1887,7 @@ async fn do_libraries_load(
         let disk_semaphore = &disk_semaphore;
 
         let task = async move {
+            let path_display = artifact_path.display().to_string();
             let valid_hash_on_disk = if let Some(expected_hash) = expected_hash {
                 let artifact_path = artifact_path.clone();
                 let permit = disk_semaphore.acquire().await.unwrap();
@@ -1835,13 +1897,17 @@ async fn do_libraries_load(
                 drop(permit);
                 result
             } else {
-                artifact_path.exists()
+                artifact_path.is_file()
             };
 
             if valid_hash_on_disk {
                 libraries_tracker.add_count(tracker_size as usize);
                 libraries_tracker.notify();
                 return Ok((artifact.path, artifact_path));
+            }
+
+            if artifact.url.as_str().is_empty() {
+                return Err(LoadLibrariesError::MissingLocalLibrary(artifact.path));
             }
 
             let was_downloading = started_downloading.swap(true, std::sync::atomic::Ordering::Relaxed);
@@ -1878,7 +1944,18 @@ async fn do_libraries_load(
                 return Err(LoadLibrariesError::WrongHash);
             }
 
-            tokio::fs::write(artifact_path.clone(), &*bytes).await?;
+            // Recreate parent right before write in case it was removed, then write atomically.
+            if let Some(parent) = artifact_path.parent() {
+                ensure_dir_all_retry(parent)
+                    .map_err(|source| LoadLibrariesError::io(parent.display().to_string(), source))?;
+            }
+
+            let write_path = artifact_path.clone();
+            let write_bytes = Arc::clone(&bytes);
+            tokio::task::spawn_blocking(move || crate::write_safe(&write_path, &write_bytes))
+                .await
+                .unwrap()
+                .map_err(|source| LoadLibrariesError::io(path_display, source))?;
             libraries_tracker.add_count(tracker_size as usize);
             libraries_tracker.notify();
             Ok((artifact.path, artifact_path))
@@ -1890,6 +1967,21 @@ async fn do_libraries_load(
     libraries_tracker.notify();
 
     futures::future::try_join_all(tasks).await
+}
+
+fn ensure_dir_all_retry(path: &Path) -> std::io::Result<()> {
+    let mut last_err = None;
+    for attempt in 0..5 {
+        match std::fs::create_dir_all(path) {
+            Ok(()) => return Ok(()),
+            Err(err) if attempt < 4 && matches!(err.kind(), ErrorKind::NotFound | ErrorKind::AlreadyExists | ErrorKind::Interrupted) => {
+                last_err = Some(err);
+                std::thread::sleep(std::time::Duration::from_millis(10 * (attempt as u64 + 1)));
+            },
+            Err(err) => return Err(err),
+        }
+    }
+    Err(last_err.unwrap_or_else(|| std::io::Error::new(ErrorKind::Other, "failed to create directory")))
 }
 
 pub enum ArgumentExpansionKey {
@@ -2023,11 +2115,17 @@ impl LaunchRuleContext {
                 && let Some(classifiers) = &library.downloads.classifiers
                 && let Some(os_name) = os_name
                 && let Some(natives_id) = platform_natives.get(&os_name)
-                && let Some(natives) = classifiers.get(natives_id)
             {
-                artifacts.push(natives.clone());
-                if let Some(extract) = &library.extract {
-                    natives_to_extract.insert(natives.path, extract.clone());
+                let arch_token = if cfg!(target_pointer_width = "64") { "64" } else { "32" };
+                let natives_key = Ustr::from(natives_id.replace("${arch}", arch_token).as_str());
+                let natives = classifiers
+                    .get(natives_id)
+                    .or_else(|| classifiers.get(&natives_key));
+                if let Some(natives) = natives {
+                    artifacts.push(natives.clone());
+                    if let Some(extract) = &library.extract {
+                        natives_to_extract.insert(natives.path, extract.clone());
+                    }
                 }
             }
         }
@@ -2491,22 +2589,26 @@ impl LaunchContext {
 }
 
 fn path_is_normal(path: impl AsRef<Path>) -> bool {
-    let components = path.as_ref().components();
+    let path = path.as_ref();
+    if path.as_os_str().is_empty() {
+        return false;
+    }
 
-    for component in components {
+    let mut has_normal = false;
+    for component in path.components() {
         match component {
             std::path::Component::Prefix(_) => return false,
             std::path::Component::RootDir => return false,
             std::path::Component::CurDir => return false,
             std::path::Component::ParentDir => return false,
-            std::path::Component::Normal(_) => {},
+            std::path::Component::Normal(_) => has_normal = true,
         }
     }
 
-    true
+    has_normal
 }
 
-fn expand_forge_argument<'a>(argument: &'a str, map: &FxHashMap<String, OsString>) -> Cow<'a, OsStr> {
+fn expand_forge_argument<'a>(argument: &'a str, map: &FxHashMap<String, OsString>) -> Result<Cow<'a, OsStr>, LaunchError> {
     let mut builder = OsString::new();
     let mut copied_to_builder = 0;
     for (i, character) in argument.char_indices() {
@@ -2519,14 +2621,16 @@ fn expand_forge_argument<'a>(argument: &'a str, map: &FxHashMap<String, OsString
                     builder.push(expanded);
                     copied_to_builder = i+end+1;
                 } else {
-                    panic!("Unsupported argument: {:?}", to_expand);
+                    return Err(LaunchError::InvalidGamePath(Cow::Owned(format!(
+                        "Unsupported forge processor argument placeholder: {{{to_expand}}}"
+                    ))));
                 }
             }
         }
     }
     if !builder.is_empty() {
         builder.push(&argument[copied_to_builder..]);
-        return Cow::Owned(builder);
+        return Ok(Cow::Owned(builder));
     }
-    Cow::Borrowed(OsStr::new(argument))
+    Ok(Cow::Borrowed(OsStr::new(argument)))
 }

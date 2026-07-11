@@ -27,7 +27,12 @@ impl RecommendationCard {
         Self {
             title: project_title.clone().into(),
             subtitle: hit.author.to_string().into(),
-            thumbnail: hit.icon_url.clone().map(|url| SharedString::from(url.to_string())),
+            thumbnail: hit
+                .icon_url
+                .as_ref()
+                .map(|url| url.to_string())
+                .filter(|url| !url.is_empty())
+                .map(SharedString::from),
             page: PageType::ModrinthProject {
                 project_id: project_id.into(),
                 project_title: project_title.into(),
@@ -143,7 +148,7 @@ pub fn recommendation_section(
                         .on_click(on_browse),
                 ),
         )
-        .when(!has_cards, |this| {
+        .when(!has_cards && loading_message.is_none(), |this| {
             this.child(
                 div()
                     .p_4()

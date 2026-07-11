@@ -967,9 +967,16 @@ impl ModMetadataManager {
 
         let png_icon = pack_png_bytes.map(load_icon_bytes).flatten();
 
+        let mut hasher = Sha1::new();
+        hasher.update(pack_mcmeta_bytes);
+        if let Some(png) = pack_png_bytes {
+            hasher.update(png);
+        }
+        let hash: [u8; 20] = hasher.finalize().into();
+
         Some(Arc::new(ContentSummary {
             id: None,
-            hash: [0; 20],
+            hash,
             filesize: None,
             name: None,
             authors: "".into(),

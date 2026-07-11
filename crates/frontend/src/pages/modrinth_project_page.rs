@@ -191,8 +191,15 @@ impl Render for ModrinthProjectPage {
         } else if let Some(project) = &self.project {
             let project = Arc::clone(project);
 
-            let icon = gpui::img(SharedUri::from(project.icon_url.as_ref().map(|url| url.to_string()).unwrap_or_else(|| "".to_string())))
-                    .with_fallback(|| Skeleton::new().rounded_lg().size_20().into_any_element());
+            let icon_url = project
+                .icon_url
+                .as_ref()
+                .map(|url| url.to_string())
+                .filter(|url| !url.is_empty());
+            let icon = icon_url.map(|url| {
+                gpui::img(SharedUri::from(url))
+                    .with_fallback(|| Skeleton::new().rounded_lg().size_20().into_any_element())
+            });
 
             let (env_icon, env_name) = env_display(project.client_side.unwrap(), project.server_side.unwrap());
 
@@ -477,7 +484,10 @@ impl Render for ModrinthProjectPage {
 
             v_flex().p_4().gap_3().w_full()
                 .child(h_flex().gap_4()
-                    .child(icon.rounded_lg().size_24().min_w_24().min_h_24())
+                    .child(match icon {
+                        Some(icon) => icon.rounded_lg().size_24().min_w_24().min_h_24().into_any_element(),
+                        None => Skeleton::new().rounded_lg().size_24().min_w_24().min_h_24().into_any_element(),
+                    })
                     .child(v_flex().w_full().line_height(relative(1.1)).gap_2()
                         .child(div().text_xl().overflow_hidden().child(project.title.clone()
                             .map(SharedString::new)

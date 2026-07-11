@@ -84,7 +84,7 @@ pub(crate) fn read_json<T: for <'de> Deserialize<'de>>(path: &Path) -> Result<T,
 
 pub(crate) fn write_safe(path: &Path, content: &[u8]) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
+        std::fs::create_dir_all(parent)?;
     }
 
     let mut temp = path.to_path_buf();

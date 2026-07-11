@@ -4,6 +4,21 @@ All notable changes to Quartz Launcher are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.2.38] - 2026-07-11
+
+### Fixed
+- Instance launch failing with "Failed to load game libraries: Failed to perform I/O operation" (path-not-found during library writes; now uses atomic writes, mkdir retries, and includes the failing path in the error)
+- Missing `${arch}` substitution for native library classifiers on older Minecraft/Forge versions
+- Natives extraction skipping files when zip entries lack parent directories
+- Empty Modrinth icon URLs causing image asset load errors
+- Recommended cards showing empty state while still loading
+- Folder resource packs using all-zero SHA1 hashes (caused Modrinth update 404s)
+- Forge processor argument expansion panicking on unknown placeholders
+- Opaque instance/library I/O errors that hid the underlying OS message
+
+### Changed
+- Forge installer temp directory is now unique per install to avoid clashes
+
 ## [5.2.37] - 2026-07-02
 
 ### Changed

@@ -103,9 +103,9 @@ impl GetId for Instance {
 pub enum InstanceLoadError {
     #[error("Not a directory")]
     NotADirectory,
-    #[error("An I/O error occured while trying to read the instance")]
+    #[error("An I/O error occured while trying to read the instance:\n{0}")]
     IoError(#[from] std::io::Error),
-    #[error("A serialization error occured while trying to read the instance")]
+    #[error("A serialization error occured while trying to read the instance:\n{0}")]
     SerdeError(#[from] serde_json::Error),
 }
 

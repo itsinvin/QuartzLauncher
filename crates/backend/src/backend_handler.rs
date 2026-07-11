@@ -669,6 +669,13 @@ impl BackendState {
                         let meta = &meta;
                         let tracker = &tracker;
                         futures.push(async move {
+                            if summary.content_summary.hash == [0_u8; 20] {
+                                return Ok(if matches!(source, ContentSource::Manual) {
+                                    ContentUpdateAction::ManualInstall
+                                } else {
+                                    ContentUpdateAction::ErrorNotFound
+                                });
+                            }
                             match source {
                                 ContentSource::Manual | ContentSource::ModrinthUnknown | ContentSource::ModrinthProject { .. } => {
                                     let permit = semaphore.acquire().await.unwrap();
