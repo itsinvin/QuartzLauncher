@@ -9,17 +9,22 @@ This section is updated automatically after every build.
 
 | | |
 |---|---|
-| **Version** | `5.2.37` |
-| **Last built** | 2026-07-03 00:41 UTC |
-| **Latest release** | [v5.2.37](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.37) |
-| **Commit** | `f6f37840` |
-| **Changelog date** | 2026-07-02 |
+| **Version** | `5.2.38` |
+| **Last built** | 2026-07-11 20:24 UTC |
+| **Latest release** | [v5.2.38](https://github.com/itsinvin/QuartzLauncher/releases/tag/v5.2.38) |
+| **Commit** | `c502c005` |
+| **Changelog date** | 2026-07-11 |
 
-### Recent changes (5.2.37)
+### Recent changes (5.2.38)
 
-- Home page now shows Recommended modpacks instead of favorite/recommended mods
-- Recommended mods, resource packs, and shaders appear at the bottom of each instance content tab
-- Modpack recommendation algorithm based on your instances and installed mods/modpacks
+- Instance launch failing with "Failed to load game libraries: Failed to perform I/O operation" (path-not-found during library writes; now uses atomic writes, mkdir retries, and includes the failing path in the error)
+- Missing `${arch}` substitution for native library classifiers on older Minecraft/Forge versions
+- Natives extraction skipping files when zip entries lack parent directories
+- Empty Modrinth icon URLs causing image asset load errors
+- Recommended cards showing empty state while still loading
+- Folder resource packs using all-zero SHA1 hashes (caused Modrinth update 404s)
+- Forge processor argument expansion panicking on unknown placeholders
+- Opaque instance/library I/O errors that hid the underlying OS message
 
 <!-- readme:build-info:end -->
 
